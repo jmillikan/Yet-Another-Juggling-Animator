@@ -1,0 +1,1 @@
+This is Yet Another Juggling Animator, better name forthcoming. It is being developed under DrScheme version 4.2.2. The file to run for the animator itself is "juggling-main.ss". It is presently licensed under the GPL, version 3.0 (See "COPYING" or <http://www.gnu.org/licenses/>).
