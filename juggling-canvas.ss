@@ -33,8 +33,8 @@
       
       (define last-ms #f)
       
-      (define grid-size 15.0)
-      (define grid-unit 0.5)
+      (define grid-size 100.0)
+      (define grid-unit 1.0)
       
       (define/public (run)
         (set! step? #t)
@@ -140,16 +140,13 @@
       (define/override (on-size width height)
         (with-gl-context
          (lambda ()
-           
-           (gl-load-identity)
            (gl-viewport 0 0 width height)
            (gl-matrix-mode 'projection)
+           (gl-load-identity)
            (let ((h (/ height width)))
              (gl-frustum -1.0 1.0 (- h) h 5.0 1000.0))
            (gl-matrix-mode 'modelview)
-
-;           
-           
+               
            (gl-enable 'cull-face)
            (gl-enable 'lighting)
            (gl-enable 'light0)
@@ -160,8 +157,7 @@
              (set! last-ms (current-milliseconds))
              (set! internal-pattern (make-pattern '()))
              
-             (gl-enable 'normalize)
-             )))
+             (gl-enable 'normalize))))
         (refresh))
       
       ; This is misnamed... At the moment, it's colors.
@@ -198,8 +194,6 @@
             (set! last-ms (current-milliseconds)))
           (with-gl-context
            (lambda ()
-             
-             
              (gl-clear-color 0.0 0.0 0.0 0.0)
              (gl-clear 'color-buffer-bit 'depth-buffer-bit)
              
@@ -225,12 +219,11 @@
                     (gl-rotate rot-y 0 1.0 0)
                     (gl-rotate rot-z 0 0 1.0)
                     
+                    ; Balls...
                     ;(gl-sphere quadric 0.1 10 10)
                     
-                    ; Rings! (No rotation for position...)
-                    ; (gl-rotate 90 1.0 1.0 0.0)
-                    
-                    (gl-disk quadric 0.23 0.32 10 1)                    
+                    ; Rings                    
+                    (gl-disk quadric 0.23 0.32 10 1)            
                     (gl-cylinder quadric 0.32 0.32 0.02 10 1)
                     (gl-quadric-orientation quadric 'inside)
                     (gl-cylinder quadric 0.23 0.23 0.02 10 1)

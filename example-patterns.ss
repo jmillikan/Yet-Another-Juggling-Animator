@@ -9,6 +9,15 @@
   (define 2-ss-examples
     '("3" "4" "5" "6" "7" "8" "9" "7531" "db97531" "64514" "55550" "552" "5551" "555505551" "744" "51" "71" "91"))
   
+  (define syncss-examples
+    '("(6x,4x)"
+      "(6x,4)*"
+      "(2x,4x)(2x,4)*"
+      "(4,4)"
+      "(6,6)"
+      "(6x,4)(2,4x)*"
+      "(6,4)(4x,2x)*"))
+  
   (define sexp-examples
     '("'(* ((6 1) (4 1)) (- -)) ; (6x,4)*"
       "'(** ((4 3) - - (3 2))) ; 7 'club' 2-count"
@@ -19,8 +28,8 @@
       "'(* ((4 0) (2 0)) (- -) ((2 1) (4 0)) (- -)) ; shower box"
       "'(((3 3) - (3 5) - (3 1) -) (- (3 0) - (3 2) - (3 4))) ; Dropback line/Triangle"
       "'(((3 3) - (3 5) - (3 1) -) (- (3 0) - (3 2) - (3 4)) ((3 1) - (3 3) - (3 5) -) (- (3 0) - (3 2) - (3 4))) ; 4-count Dropbacks/Triangle"
-      "'(((5 3) - (3 5) - (3 1) -) (- (3 0) - (3 2) - (3 4))) ; 10-club triple dropback"
-      "'(((5 3) - - (3 2) (3 1) -) (- (3 0) (4 5) - - (3 4))) ; 10-club doubles dropback"
+      "#;(10-club triple dropback) '(((5 3) - (3 5) - (3 1) -) (- (3 0) - (3 2) - (3 4)))"
+      "#;(10-club doubles dropbacks) '(((4 3) - - (3 2) (3 1) -) (- (3 0) (4 5) - - (3 4)))"
       "'(* ((3 5) - (3 7) - (3 9) - (3 1) - (3 3) -) (- (3 0) - (3 2) - (3 4) - (3 6) - (3 8)) ((3 1) - (3 3) - (3 5) - (3 7) - (3 9) -)) ; 3-count Star"
       "#;(Almost a Berkley Y...) `(* ((3 7) - (3 9) - (3 11) - (3 5) - (3 1) - (3 3) -) ,(self 5 3 'left) ,(self 5 3 'right))"
       "'(((5 7) - (5 9) - (5 11) - (3 5) - (3 1) - (3 3) -) (- (3 0) - (3 2) - (3 4) - (3 6) - (3 8) - (3 10))) ; Big double/triple dropback ring"
@@ -64,7 +73,7 @@
           "#;(15-jugglers - 3 rings) (append (juggler-circle 5 8.0) (juggler-circle 5 5.0) (juggler-circle 5 10.0))"
           "#;(20 jugglers) (append (juggler-circle 5 3.0) (juggler-circle 15 6.5))"
           "#;(65 jugglers) (append (juggler-circle 5 3.0) (juggler-circle 15 6.5) (juggler-circle 20 10.0) (juggler-circle 25 12.0))"
-          "#;(600 jugglers, 6 rings) (append (juggler-circle 100 50.0) (juggler-circle 100 53.0) (juggler-circle 100 56.0) (juggler-circle 100 41.0)  (juggler-circle 100 44.0) (juggler-circle 100 47.0))"
+          "#;(600 jugglers, 6 rings) (append (juggler-circle 100 60.0) (juggler-circle 100 63.0) (juggler-circle 100 66.0) (juggler-circle 100 51.0)  (juggler-circle 100 54.0) (juggler-circle 100 57.0))"
           ))
   
   (define 3-man-line (list
