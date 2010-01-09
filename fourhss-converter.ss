@@ -1,7 +1,7 @@
 (module fourhss-converter scheme
     (require srfi/1)
   
-  (provide 4hss->sexp 2hss->sexp sync-ss->sexp)
+  (provide 6hss->sexp 4hss->sexp 2hss->sexp sync-ss->sexp)
   
   (define (2hss->sexp s)
     (let* ((ss-cleaned (regexp-replace* #px"\\s" s ""))
@@ -26,8 +26,11 @@
   (define (4hss->sexp s)
     (let* ((ss-cleaned (regexp-replace* #px"\\s" s ""))
       (ss-list (regexp-split #px"" ss-cleaned))      
-      (throw-list (map (λ (c) (hash-ref throw-lengths (string-ref c 0))) ss-list))            
-      (full-throw-list (if (zero? (remainder (length throw-list) 4)) throw-list (append throw-list throw-list throw-list throw-list))))
+      (throw-list (map (λ (c) (hash-ref throw-lengths (string-ref c 0))) 
+                       ss-list))            
+      (full-throw-list (if (zero? (remainder (length throw-list) 4)) 
+                           throw-list 
+                           (append throw-list throw-list throw-list throw-list))))
       
       (foldr (λ (throw hand lst)
                         (cons
@@ -47,6 +50,52 @@
                             (if (= throw-hand 3) sexp-throw '-)))
                          lst))
                       '() full-throw-list (iota (length full-throw-list)))))
+  
+  ; Ugh, it really is about time to generalize this.
+  (define (6hss->sexp s)
+    (let* ((ss-cleaned (regexp-replace* #px"\\s" s ""))
+      (ss-list (regexp-split #px"" ss-cleaned))      
+      (throw-list (map (λ (c) (hash-ref throw-lengths (string-ref c 0)))
+                       ss-list))            
+      (full-throw-list (if (zero? (remainder (length throw-list) 6)) 
+                           throw-list 
+                           ; This could be less in special cases, really, the result just needs to be divisible by 6. Primes 5+ are the degenerate cases
+                           (append throw-list throw-list throw-list throw-list throw-list throw-list))))
+      
+      (foldr (λ (throw hand lst)
+               (cons
+                (let* 
+                    ((throw-hand (remainder hand 6))
+                     (dest-hand (remainder (+ throw-hand throw) 6))
+                     (sexp-throw (if (zero? throw) 
+                                     '- 
+                                     ; "fix" the fact that 6hand ss goes rrrlll
+                                     ; where sexps go rlrlrl
+                                     (list throw 
+                                           (cond 
+                                             ((= dest-hand 0) 0) ; Clarity
+                                             ((= dest-hand 1) 2)
+                                             ((= dest-hand 2) 4)
+                                             ((= dest-hand 3) 1)
+                                             ((= dest-hand 4) 3)
+                                             ((= dest-hand 5) 5) ; Clarity
+                                             (#t dest-hand))))))
+                  (list
+                   (if (= throw-hand 0) sexp-throw '-)
+                   (if (= throw-hand 3) sexp-throw '-)
+                   (if (= throw-hand 1) sexp-throw '-)
+                   (if (= throw-hand 4) sexp-throw '-)
+                   (if (= throw-hand 2) sexp-throw '-)
+                   (if (= throw-hand 5) sexp-throw '-))
+                  #;(list
+                   (if (= throw-hand 0) sexp-throw '-)
+                   (if (= throw-hand 3) sexp-throw '-)
+                   (if (= throw-hand 1) sexp-throw '-)
+                   (if (= throw-hand 4) sexp-throw '-)
+                   (if (= throw-hand 2) sexp-throw '-)
+                   (if (= throw-hand 5) sexp-throw '-)))
+                lst))
+             '() full-throw-list (iota (length full-throw-list)))))
   
   ; No pass fixes for now...
   ; This gets REALLY messy in convert-sync-throw, and will be worse for passing... 
@@ -72,24 +121,26 @@
   ; to a sexp throw (list <height> <hand>)
   (define (convert-sync-throw throw hand)
     ; crossing is whether "x" was indicated, not whether 
-    (let-values (((height crossing?)
-                 (cond ((number? throw) (values throw #f))
-                       ((regexp-match? #px"[0-9]+x" (symbol->string throw))
-                        (values
-                         (string->number (regexp-replace #px"([0-9]+)x" (symbol->string throw) "\\1"))
-                         #t))
-                       ; Add support for pass/crossing pass here later.
-                       (#t 'flagrant-error))))
+    (let-values (((height crossing? pass?)
+                  (if (number? throw) (values throw #f #f)
+                      (values
+                       (string->number (regexp-replace #px"^([0-9]+)[px]*$" (symbol->string throw) "\\1"))
+                       (regexp-match? #px"x" (symbol->string throw))
+                       (regexp-match? #px"p" (symbol->string throw))))))
       (if (zero? height)
           '-
           (list height 
-                (if crossing? 
-                    (if (even? hand)
-                        ; Even... Go to hand + 1
-                        (add1 hand)
-                        ; Odd... Go to hand - 1
-                        (sub1 hand))
-                    hand)))))
+                ; Determine receiver (0 or 2)
+                (let ((reciever-same-hand 
+                       (if pass? (remainder (+ hand 2) 4) hand)))
+                  (if (or 
+                       (and (not pass?) crossing?)
+                       (and (not crossing?) pass?))
+                      (if (even? reciever-same-hand)
+                                    (add1 reciever-same-hand)
+                                    (sub1 reciever-same-hand))
+                      reciever-same-hand))))))
+                       
     
                 
         

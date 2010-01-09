@@ -11,46 +11,42 @@
            "example-patterns.ss"
            "juggling-canvas.ss")
   
+  (define w #f) ; screw it.
   (define main-window
     (class* frame% ()
       (inherit show)
       (super-instantiate ("Juggling Animator" #f))
       (define canvas (instantiate juggling-canvas% (this) (min-width 600) (min-height 400)))
       (define control-panel (instantiate horizontal-panel% (this)
-                  (alignment '(center center)) (stretchable-height #f) (min-height 150)))
+                              (alignment '(center center)) (stretchable-height #f) (min-height 150)))
       
       (define/public (show-pattern p j)
         (send canvas set-pattern p)
         (send canvas set-jugglers j))
       
-      #;(instantiate-pattern-forms canvas control-panel)
-      
       (define pattern-forms (instantiate pattern-forms% (control-panel)))
-      (instantiate-view-controls canvas control-panel)
-      
-      ))
+      (instantiate-view-controls canvas control-panel)))
   
   ; Tab panels don't automatically change panels when clicked... You have to rig it up yourself. Awesome.
   (define pattern-forms% 
     (class* tab-panel% ()
       (inherit get-selection add-child delete-child)
       (init-field w)
-      (super-instantiate ((list "Siteswap" "Scheme") w) 
+      (super-instantiate ((list "2/4 Hand Siteswap" "Many Jugglers") w) 
         (callback (lambda (c x) (send this change-tab)))
         (min-width 400))
       ; Why does this have to be public?  ;_;
       (define/public (change-tab)
-         (let* ((i (get-selection))
-                (new-form 
-                 (cond ((= i 0) siteswap-form)
-                       
-                 ((= i 1) scheme-form)
-                 (#t 'flagrant-error))))
-
-           (delete-child current-form)
-           (add-child new-form)
-           (set! current-form new-form)
-        ))
+        (let* ((i (get-selection))
+               (new-form 
+                (cond ((= i 0) siteswap-form)
+                      ((= i 1) scheme-form)
+                      (#t 'flagrant-error))))
+          
+          (delete-child current-form)
+          (add-child new-form)
+          (set! current-form new-form)
+          ))
       
       (define siteswap-form
         (instantiate siteswap-form% (this)))
@@ -60,72 +56,50 @@
       (define scheme-form
         (instantiate scheme-form% (this)))
       
-      (delete-child scheme-form)
+      (delete-child scheme-form)))
+  
+  ; A single line in the interface for pattern definition.
+  (define pattern-line%
+    (class* horizontal-panel% ()
+      (init-field name)
+      (init-field initial-beat)
+      (init-field initial-dwell)
+            (init-field initial-pattern)
+      (init-field pattern-lambda) ; string -> sexp
+      (init-field hands-lambda) ; thunk -> hands
+      (init-field juggling-window) ; show juggling-window show-pattern...
+      (init-field examples-list) ; for input combo
+      (init-field parent)
       
-      #;(send scheme-form show #f)
+      (super-instantiate (parent) (alignment '(center center)) (stretchable-width #t))
+    
+      (define input-pattern (instantiate combo-field% (name examples-list this) (min-width 250) (init-value initial-pattern) (stretchable-width #t)))
+      (define input-beat (instantiate text-field% ("" this) (init-value  initial-beat)))
+      (define input-dwell (instantiate text-field% ("" this) (init-value  initial-dwell)))
       
-      
-      
-      ))
+      (instantiate button% 
+        ("Run" this (lambda x 
+                        (with-handlers ((exn:fail? (lambda (e) 'flagrant-error)))
+                          (let*   
+                              ((beat-value (string->number (send input-beat get-value)))
+                               (dwell-value (string->number (send input-dwell get-value)))
+                               (sexp-pattern (pattern-lambda (send input-pattern get-value)))
+                               (pattern (sexp->pattern sexp-pattern beat-value dwell-value (hands-lambda))))
+                            (send w show-pattern
+                                  pattern
+                                  (hands-lambda))))))
+        (stretchable-width #t))))
+
   
   (define siteswap-form% 
     (class* vertical-panel% ()
       (init-field parent)
       (super-instantiate (parent) (alignment '(center center)) (stretchable-height #f))
-      
-      (define h-2hss (instantiate horizontal-panel% (this) (alignment '(center center)) (stretchable-width #t)))
-      (define 2hss-input (instantiate combo-field% ("Async Siteswap" 2-ss-examples h-2hss) (min-width 250) (init-value "7531") (stretchable-width #t)))
-      (define 2hss-beat (instantiate text-field% ("" h-2hss) (init-value  "0.25")))
-      (define 2hss-dwell (instantiate text-field% ("" h-2hss) (init-value  "0.16")))
-      
-      (instantiate button% 
-        ("Run" h-2hss (lambda x 
-                                           (with-handlers ((exn:fail? (lambda (e) 'flagrant-error)))
-                                             (let* 
-                                                 
-                                                 ((beat-value (string->number (send 2hss-beat get-value)))
-                                                  (dwell-value (string->number (send 2hss-dwell get-value)))
-                                                  (sexp-pattern (2hss->sexp (send 2hss-input get-value)))
-                                                  (pattern (sexp->pattern sexp-pattern beat-value dwell-value pair-of-hands)))
-                                               (send w show-pattern
-                                                     pattern
-                                                     pair-of-hands)))))
-        (stretchable-width #t))
-      
-      (define h-4hss (instantiate horizontal-panel% (this) (alignment '(center center)) (stretchable-width #t)))
-      (define 4hss-input (instantiate combo-field% ("4-hand Siteswap" 4-hand-examples h-4hss) (min-width 250) (init-value "966") (stretchable-width #t)))              
-      
-      (define 4hss-beat (instantiate text-field% ("" h-4hss) (init-value  "0.15")))
-      (define 4hss-dwell (instantiate text-field% ("" h-4hss) (init-value  "0.13")))
-      
-      (instantiate button% 
-        ("Run" h-4hss (lambda x 
-                                           (with-handlers ((exn:fail? (lambda (e) 'flagrant-error)))
-                                             (let* ((beat-value (string->number (send 4hss-beat get-value)))
-                                                    (dwell-value (string->number (send 4hss-dwell get-value)))
-                                                    (sexp-pattern (4hss->sexp (send 4hss-input get-value)))
-                                                    (pattern (sexp->pattern sexp-pattern beat-value dwell-value (juggler-circle 2 3.0))))
-                                               (send w show-pattern pattern (juggler-circle 2 3.0))))))
-        (stretchable-width #t))
-      
-      
-      (define h-syncss (instantiate horizontal-panel% (this) (alignment '(center center)) (stretchable-width #t)))
-      (define syncss-input (instantiate combo-field% ("Synchronous Siteswap" syncss-examples h-syncss) (min-width 250) (init-value "(6x,4x)") (stretchable-width #t)))              
-      
-      (define syncss-beat (instantiate text-field% ("" h-syncss) (init-value  "0.25")))
-      (define syncss-dwell (instantiate text-field% ("" h-syncss) (init-value  "0.20")))
-      
-      (instantiate button% 
-        ("Run" h-syncss (lambda x 
-                                           (with-handlers ((exn:fail? (lambda (e) 'flagrant-error)))
-                                             (let* ((beat-value (string->number (send syncss-beat get-value)))
-                                                    (dwell-value (string->number (send syncss-dwell get-value)))
-                                                    (sexp-pattern (sync-ss->sexp (send syncss-input get-value)))
-                                                    (pattern (sexp->pattern sexp-pattern beat-value dwell-value (juggler-circle 2 3.0))))
-                                               (send w show-pattern pattern (juggler-circle 2 3.0))))))
-        (stretchable-width #t))
-      ))
-      
+      (instantiate pattern-line% ("Siteswap" "0.25" "0.16" "744" 2hss->sexp (λ _ pair-of-hands) w 2-ss-examples this))
+      (instantiate pattern-line% ("4-hand SS" "0.15" "0.13" "966" 4hss->sexp (λ _ (juggler-circle 2 3.0)) w 4-hand-examples this))
+      (instantiate pattern-line% ("Synchronous" "0.25" "0.20" "(6x,4)*" sync-ss->sexp (λ _ (juggler-circle 2 3.0)) w syncss-examples this))
+))
+  
   
   (define scheme-form% 
     (class* vertical-panel% ()
@@ -134,24 +108,10 @@
       
       (define hands-select (instantiate combo-field% ("Juggler/Hand List" hands-examples this) (min-width 250) (init-value "") (stretchable-width #t)))
       (define (get-hands)
-              (eval (call-with-input-string (send hands-select get-value) read)))
+        (eval (call-with-input-string (send hands-select get-value) read)))
       
-      (define h-sexp (instantiate horizontal-panel% (this) (alignment '(center center)) (stretchable-width #t)))
-      (define sexp-input (instantiate combo-field% ("S-Expression (MHN)" sexp-examples h-sexp) (min-width 250) (init-value "") (stretchable-width #t)))              
-      (define sexp-beat (instantiate text-field% ("" h-sexp) (init-value  "0.25")))
-      (define sexp-dwell (instantiate text-field% ("" h-sexp) (init-value  "0.2")))
-      (instantiate button% 
-        ("Run" h-sexp (lambda x 
-                        (with-handlers ((exn:fail? (lambda (e) 'flagrant-error)))
-                          (send w show-pattern 
-                                (sexp->pattern (eval (call-with-input-string (send sexp-input get-value) read)) 
-                                               (string->number (send sexp-beat get-value))
-                                               (string->number (send sexp-dwell get-value)) 
-                                               (get-hands)) 
-                                (get-hands)))))
-        (stretchable-width #t))
-      
-      ))
+      (instantiate pattern-line% ("Scheme List" "0.25" "0.2" "" (λ (s) (eval (call-with-input-string s read))) get-hands w sexp-examples this))
+      (instantiate pattern-line% ("6-hand SS" "0.10" "0.08" "a" 6hss->sexp get-hands w 6-ss-examples this))      ))
   
   (define (instantiate-view-controls c h)
     (let ((v (instantiate vertical-panel% (h) (alignment '(center center)) (stretchable-width #f) (min-width 200))))
@@ -169,8 +129,6 @@
           (stretchable-width #f)))))
   
   
-  (define w (make-object main-window))
-    (send w show #t)
-        
-  
+  (set! w (make-object main-window))
+  (send w show #t)
   )

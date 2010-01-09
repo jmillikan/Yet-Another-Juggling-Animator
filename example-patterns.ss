@@ -3,11 +3,26 @@
   
   (provide (all-defined-out))
   
+  (define (mangle-hands hands order)
+    (map list-ref (circular-list hands) order))
+  
   (define 4-hand-examples
     '("966" "996" "9629669669969929" "86277" "86727" "5" "7" "9" "b" "db97" "db97531"))
   
   (define 2-ss-examples
     '("3" "4" "5" "6" "7" "8" "9" "7531" "db97531" "64514" "55550" "552" "5551" "555505551" "744" "51" "71" "91"))
+  
+  (define 6-ss-examples
+    '("999d" ; 4-count triangle
+      "9ddd" ; 3/4-count triangle?
+      "a" ; triangorilla?
+      "e" ; 14-object "gorilla"
+      "ama" ; with "aam", "maa" a set of 14-object triple/single gorillas
+      "9" ; cascades
+      "9a8 999 a89 999" ; 4-count feed
+      "9a8 a89 999" ; PPS feed
+      "aa7999" ; 3-man line (looks astonishingly accurate...)
+      ))
   
   (define syncss-examples
     '("(6x,4x)"
@@ -16,18 +31,27 @@
       "(4,4)"
       "(6,6)"
       "(6x,4)(2,4x)*"
-      "(6,4)(4x,2x)*"))
+      "(6,4)(4x,2x)*"
+      "(6x,4p,6x,4p)(6p,4x,6p,4x)"
+      "(4p,4x,4p,4x)"
+      "(4px,4x,4x,6px)"))
   
   (define sexp-examples
     '("'(* ((6 1) (4 1)) (- -)) ; (6x,4)*"
       "'(** ((4 3) - - (3 2))) ; 7 'club' 2-count"
       "'(*** ((4 2) - (3 3) -)) ; 7 'club' crossing 2-count"
       "'(* ((3 3) - (3 1) -) (- (3 0) - (3 2)) ((3 1) - (3 3) -)) ; 3-count"
+      "#;(Almost Jim's 3-count) '(* ((3 3) - (3 0) -) ((3 1) - - (4 2)) (- (3 0) (2 3) -) ((3 3) - - (3 1)) (- (4 0) - (3 2)) ((2 1) - (3 3) -))"
       "'(* ((4 0) (2 0)) (- -)) ; box"
       "'(* ((8 0) (2 0)) (- -) ((4 0) (2 0)) (- -)) ; 4-ball box"
       "'(* ((4 0) (2 0)) (- -) ((2 1) (4 0)) (- -)) ; shower box"
       "'(((3 3) - (3 5) - (3 1) -) (- (3 0) - (3 2) - (3 4))) ; Dropback line/Triangle"
       "'(((3 3) - (3 5) - (3 1) -) (- (3 0) - (3 2) - (3 4)) ((3 1) - (3 3) - (3 5) -) (- (3 0) - (3 2) - (3 4))) ; 4-count Dropbacks/Triangle"
+      
+      "#;(\"Mill's Mess\") '(* ((3 1) -) ((3 1) -) ((3 1) -))"
+      "#;(4-ball \"Mill's Mess\") '(* ((4 1) -) ((4 1) -) ((4 0) -))"
+      "#;(5-ball \"Mill's Mess\") '(* ((5 1) -) ((5 0) -) ((5 0) -))"
+      "#;(441 \"Mill's Mess\") '(* ((4 1) -) ((1 0) -) ((4 0) -))"
       "#;(10-club triple dropback) '(((5 3) - (3 5) - (3 1) -) (- (3 0) - (3 2) - (3 4)))"
       "#;(10-club doubles dropbacks) '(((4 3) - - (3 2) (3 1) -) (- (3 0) (4 5) - - (3 4)))"
       "'(* ((3 5) - (3 7) - (3 9) - (3 1) - (3 3) -) (- (3 0) - (3 2) - (3 4) - (3 6) - (3 8)) ((3 1) - (3 3) - (3 5) - (3 7) - (3 9) -)) ; 3-count Star"
@@ -43,6 +67,17 @@
       "#;(600 juggler 3-count - Slow) (3-count 600 3)"
       
       ))
+  
+    (define jims-3-star
+    '(*
+      ((3 3) - (3 0) -) 
+      ((3 1) - - (4 2)) 
+      (- (3 0) (2 3) -)
+                        
+      ((3 3) - - (3 1)) 
+      (- (4 0) - (3 2)) 
+      ((2 1) - (3 3) -)))
+  
   
   (define internal-examples
     '("(sexp->pattern '(((11 3) - - -) (- - - -) (- (10 0) - -) (- - (11 1) -) (- - - -) (- - - (10 2))) 0.10 0.20 pair-of-jugglers) ; 7-singles"
@@ -61,8 +96,17 @@
                              (list (make-position -0.15 3 1.0) (make-position -0.4 3 1.0))
                              (list (make-position 0.15 3 1.0) (make-position 0.4 3 1.0))))
   
+  (define mills-hands ; Without animating hands, this is sorta simple... 2 hands, 
+    ; each catches in the middle and throws from one side.
+    (list 
+     ; "Right" hand
+     (list (make-position 0.4 0 1.0) (make-position 0 0 1.0))
+     ; "Left" hand
+     (list (make-position -0.4 0 1.0) (make-position 0 0 1.0))))
+  
   (define hands-examples
     (list "pair-of-hands"
+          "mills-hands"
           "pair-of-jugglers ; r1 l1 r2 l2)"
           "funky-pair-of-jugglers ; r1 r2 l1 l2 (4-hand SS)"
           "3-man-line ; r1 l1 ..."
@@ -74,6 +118,7 @@
           "#;(20 jugglers) (append (juggler-circle 5 3.0) (juggler-circle 15 6.5))"
           "#;(65 jugglers) (append (juggler-circle 5 3.0) (juggler-circle 15 6.5) (juggler-circle 20 10.0) (juggler-circle 25 12.0))"
           "#;(600 jugglers, 6 rings) (append (juggler-circle 100 60.0) (juggler-circle 100 63.0) (juggler-circle 100 66.0) (juggler-circle 100 51.0)  (juggler-circle 100 54.0) (juggler-circle 100 57.0))"
+          "#;(Async gorilla hands) (mangle-hands (juggler-circle 3 3.0) '(3 0 1 2 4 5))"
           ))
   
   (define 3-man-line (list
