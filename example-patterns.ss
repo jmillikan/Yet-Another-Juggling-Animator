@@ -6,8 +6,154 @@
   (define (mangle-hands hands order)
     (map list-ref (circular-list hands) order))
   
+  ; Useful for future patterns...
+  
+  ; A hand (list throw catch) at radius r from 0 0 at angle a
+  (define (angle-hand a r lr)
+    
+    (let* 
+        (
+         (split (/ pi (* r 16)))
+         (a1 (- a split)) (a2 (+ a split)))
+      ((if (eq? lr 'right) reverse (lambda (x) x))
+       (list (make-position (* r (sin a2)) (* r (cos a2)) 1.0)
+            (make-position (* r (sin a1)) (* r (cos a1)) 1.0)))))
+  
+  (define (rotate p angle)
+    (match-let (((struct position (x y z)) p))
+      (make-position
+       (+ (* x (cos (- angle))) (* y (sin angle)))
+       (+ (* y (cos angle)) (* x (sin (- angle))))
+       z)))
+  
+  (define (rotate-hands hands angle)
+    (map (λ (hand) (list (rotate (car hand) angle) (rotate (cadr hand) angle))) hands))
+  
+  (define (translate p x y z)
+    (match-let (((struct position (x1 y1 z1)) p))
+      (make-position
+       (+ x x1)
+       (+ y y1)
+       (+ z z1))))
+  
+  (define (translate-hands hands x y z)
+    (map (λ (hand) (list (translate (car hand) x y z) (translate (cadr hand) x y z))) hands))
+
+  (define pair-of-hands
+    (list (list (make-position 0.35 0 1.0) (make-position 0.60 -0.05 1.1))
+          (list (make-position -0.35 0 1.0) (make-position -0.60 -0.05 1.1))))
+  
+  (define pair-of-jugglers 
+    (append (translate-hands pair-of-hands 0 2.0 0)
+            (translate-hands (rotate-hands pair-of-hands pi) 0 -2.0 0)))
+  
+  
+  (define triangle 
+      (list (angle-hand (- 0 (/ pi 16)) 2.5 'left) (angle-hand (+ 0 (/ pi 16)) 2.5 'right)
+            (angle-hand (- (* pi 2/3) (/ pi 12)) 2.5 'left) (angle-hand (+ (* pi 2/3) (/ pi 12)) 2.5 'right)
+            (angle-hand (- (* pi 4/3) (/ pi 12)) 2.5 'left) (angle-hand (+ (* pi 4/3) (/ pi 12)) 2.5 'right)))
+  
+  ; n jugglers r meters from center
+  (define 2pi (* 2 pi))
+  (define (juggler-circle n r)
+      (apply append
+             (for/list ((i (in-range 0 (- 2pi (/ 2pi (* n 2))) (/ 2pi n))))
+               (list (angle-hand (- i (/ pi (* 4 r))) r 'left) (angle-hand (+ i (/ pi (* 4 r))) r 'right)))))
+  
+  (define (juggler-line n space angle) ; Jugglers from 0,0 in a line along angle 0 facing toward "angle"
+    (apply append
+           (map
+            (λ (n) (translate-hands
+                    (rotate-hands pair-of-hands angle)
+                    (* space n) 0 0))
+            (iota n))))
+    
+  ; Hand list starting with "n" pairs facing the front,
+  ; an optional side-shifted guy in the back,
+  ; and an optional side-shifted guy in the front facing the rest.
+  (define (dropback-line n space include-rear? include-front?)
+    (append
+     (translate-hands (juggler-line n space (- (/ pi 2))) space 0 0)
+     (if include-rear? (translate-hands
+                        (rotate-hands pair-of-hands (- (/ pi 2)))
+                        (* space (+ n 1)) (/ space 5) 0)
+         '())
+     (if include-front? (translate-hands
+                        (rotate-hands pair-of-hands (/ pi 2))
+                        0 (/ space 5) 0)
+         '())))
+    
+  
+  ; Put n jugglers (two hands) on the ground 
+  ;(define (juggler-line n x y space angle)
+    
+  #;(define funky-pair-of-jugglers
+    (list (list-ref pair-of-jugglers 0)
+          (list-ref pair-of-jugglers 2)
+          (list-ref pair-of-jugglers 1)
+          (list-ref pair-of-jugglers 3)))
+  
+  ; N jugglers do a self v (same hand if even, opposite if odd) from hand h ('left/'right)
+  (define (self n v h)
+    (sync (* 2 n) v (if (eq? h 'left) -1 +1) (if (eq? h 'left) odd? even?)))
+  
+  (define (sync number-of-hands throw-value destination-offset pred)
+    (map 
+     (lambda (i) (if (pred i) 
+                     (let* 
+                         ((unfixed-dest (+ i destination-offset))
+                          (dest-index (cond
+                                         ((>= unfixed-dest number-of-hands) (remainder unfixed-dest number-of-hands))
+                                         ((< unfixed-dest 0) (+ number-of-hands unfixed-dest))
+                                         (#t unfixed-dest))))                     
+                       (list throw-value dest-index)) '-))
+     (iota number-of-hands)))
+  
+  (define (3-count number-of-jugglers number-of-props . rest)
+    (let-values (((even-offset odd-offset) (if (null? rest) (values -1 1)
+                                               (values (car rest) (cadr rest)))))
+      (list (sync (* number-of-jugglers 2) number-of-props even-offset even?) 
+            (sync (* number-of-jugglers 2) number-of-props -1 odd?) 
+            (sync (* number-of-jugglers 2) number-of-props 1 even?)
+            (sync (* number-of-jugglers 2) number-of-props odd-offset odd?) 
+            (sync (* number-of-jugglers 2) number-of-props 1 even?) 
+            (sync (* number-of-jugglers 2) number-of-props -1 odd?))))
+  
+  
+  
+  ; AUUUUUGH.
+  ; I should have written functions for the individual roles in a feed
+  ; And then finally started writing functions to sew jugglers together...
+  
+  ; Only works with jugglers 0-(n-2) being fed and n-1 feeding for now
+  ; (sync needs to be improved to make this easier, maybe)
+  (define (typewriter-feed n count objects)
+    (if (or (odd? count) (even? objects)) 'flagrant-error
+        ; The pattern should be (n - 1) * count throws long... (the feeder doesn't feed themself)
+        (apply append
+               (map
+                (λ (i) ; It's  i's turn, 0 based
+                  ; list of beats, goes to append
+                  (cons
+                   ; pass beat
+                   (let ((feeder-dest-hand (sub1 (* n 2)))
+                         (feedee-dest-hand (sub1 (* (add1 i) 2))))
+                     (apply append
+                            (map
+                             (λ (j) ; juggler j
+                               (cond ((= j (sub1 n)) (list (list objects feedee-dest-hand) '-))
+                                     ((= j i) (list (list objects feeder-dest-hand) '-))
+                                     ; all others, right self
+                                     (#t (list (list objects (add1 (* j 2))) '-))))
+                             (iota n))))
+                       
+                   ; self beat(s)
+                   (for/list ((j (in-range 1 count)))
+                     (sync (* n 2) objects (if (even? j) 1 -1) (if (even? j) even? odd?)))))
+                (iota (sub1 n))))))
+  
   (define 4-hand-examples
-    '("966" "996" "9629669669969929" "86277" "86727" "5" "7" "9" "b" "db97" "db97531"))
+    '("966" "996" "9629669669969929" "86277" "86727" "5" "7" "9" "b" "db97" "db97531" "7966"))
   
   (define 2-ss-examples
     '("3" "4" "5" "6" "7" "8" "9" "7531" "db97531" "64514" "55550" "552" "5551" "555505551" "744" "51" "71" "91"))
@@ -57,6 +203,8 @@
       "'(* ((3 5) - (3 7) - (3 9) - (3 1) - (3 3) -) (- (3 0) - (3 2) - (3 4) - (3 6) - (3 8)) ((3 1) - (3 3) - (3 5) - (3 7) - (3 9) -)) ; 3-count Star"
       "#;(Almost a Berkley Y...) `(* ((3 7) - (3 9) - (3 11) - (3 5) - (3 1) - (3 3) -) ,(self 5 3 'left) ,(self 5 3 'right))"
       "'(((5 7) - (5 9) - (5 11) - (3 5) - (3 1) - (3 3) -) (- (3 0) - (3 2) - (3 4) - (3 6) - (3 8) - (3 10))) ; Big double/triple dropback ring"
+      "#;(5-man 5p 3) (list (sync 10 5 3 even?) (sync 10 3 -1 odd?))"
+      "#;(400-man 5p 3) (list (sync 80 5 3 even?) (sync 80 3 -1 odd?))"
       "#;(Gorilla sync) '(((5 5) (5 2) - - - -) (- - - (5 1) (5 0) -) (- - (5 3) - - (5 4)))"
       "#;(20 cascades) (list (self 20 3 'right) (self 20 3 'left))"
       "#;(15 juggler 3-count - traveling props) (list (sync 30 3 1 even?) (sync 30 3 -1 odd?) (sync 30 3 9 even?) (sync 30 3 -1 odd?) (sync 30 3 1 even?)  (sync 30 3 19 odd?))"
@@ -65,6 +213,7 @@
       "#;(More 15-man garbage) (list (sync 30 11 11 even?) (sync 30 9 9 odd?) (sync 30 5 1 even?) (sync 30 5 9 odd?) (sync 30 5 1 even?)  (sync 30 7 9 odd?))"
       "#;(65 juggler 3-count) (list (sync 130 3 1 even?) (sync 130 3 -1 odd?) (sync 130 3 -1 even?) (sync 130 3 -1 odd?) (sync 130 3 1 even?)  (sync 130 3 1 odd?))"
       "#;(600 juggler 3-count - Slow) (3-count 600 3)"
+      "#;(5-club feed, 10 feedees) (typewriter-feed 11 2 5)"
       
       ))
   
@@ -77,24 +226,6 @@
       ((3 3) - - (3 1)) 
       (- (4 0) - (3 2)) 
       ((2 1) - (3 3) -)))
-  
-  
-  (define internal-examples
-    '("(sexp->pattern '(((11 3) - - -) (- - - -) (- (10 0) - -) (- - (11 1) -) (- - - -) (- - - (10 2))) 0.10 0.20 pair-of-jugglers) ; 7-singles"
-      "(sexp->pattern '(** ((11 3) - - -) (- - - -) (- (10 0) - -)) 0.10 0.20 pair-of-jugglers) ; 7-singles"
-      "(sexp->pattern (4hss->sexp \"b0a\") 0.10 0.20 funky-pair-of-jugglers) ; 7 clubs... Jim's 2-count?"))
-  
-  (define ex-left-throw (make-position -0.15 0 1.0))
-  (define ex-left-catch (make-position -0.4 0 1.0))
-  (define ex-right-throw (make-position 0.15 0 1.0))
-  (define ex-right-catch (make-position 0.4 0 1.0))
-  
-  (define pair-of-hands (list (list ex-right-throw ex-right-catch) (list ex-left-throw ex-left-catch)))    
-  
-  (define pair-of-jugglers (list (list  ex-right-throw ex-right-catch) 
-                             (list ex-left-throw ex-left-catch)
-                             (list (make-position -0.15 3 1.0) (make-position -0.4 3 1.0))
-                             (list (make-position 0.15 3 1.0) (make-position 0.4 3 1.0))))
   
   (define mills-hands ; Without animating hands, this is sorta simple... 2 hands, 
     ; each catches in the middle and throws from one side.
@@ -112,6 +243,7 @@
           "3-man-line ; r1 l1 ..."
           "#;(Triangle) (juggler-circle 3 2.5)"
           "#;(Star) (juggler-circle 5 3.0)"
+          "#;(Star) (rotate-hands (juggler-circle 5 3.0) (/ (* pi 0) 16)) "
           "#;(Dropback ring) (append (juggler-circle 3 2.5) (juggler-circle 3 4.5))"
           "#;(15-juggler ring) (juggler-circle 15 8.0)"
           "#;(15-jugglers - 3 rings) (append (juggler-circle 5 8.0) (juggler-circle 5 5.0) (juggler-circle 5 10.0))"
@@ -119,73 +251,20 @@
           "#;(65 jugglers) (append (juggler-circle 5 3.0) (juggler-circle 15 6.5) (juggler-circle 20 10.0) (juggler-circle 25 12.0))"
           "#;(600 jugglers, 6 rings) (append (juggler-circle 100 60.0) (juggler-circle 100 63.0) (juggler-circle 100 66.0) (juggler-circle 100 51.0)  (juggler-circle 100 54.0) (juggler-circle 100 57.0))"
           "#;(Async gorilla hands) (mangle-hands (juggler-circle 3 3.0) '(3 0 1 2 4 5))"
+          "#;(5-man dropback line) (dropback-line 3 3.0 #t #t)"
+          "#;(40-man \"canoe\" (longboat?)) (append (dropback-line 19 3.0 #t #f) (translate-hands (rotate-hands (dropback-line 19 3.0 #t #f) pi) 60 3 0))"
+          "#;(11-man feed) (append (take (juggler-circle 30 10.0) 20) (rotate-hands pair-of-hands (/ pi 3.5)))"
           ))
   
   (define 3-man-line (list
-                      (list ex-left-throw ex-left-catch)
-                      (list  ex-right-throw ex-right-catch) 
+                      (list (make-position -0.15 0 1.0) (make-position -0.4 0 1.0))
+                      (list (make-position 0.15 0 1.0) (make-position 0.4 0 1.0))
                       (list (make-position -0.15 3 1.0) (make-position -0.4 3 1.0))
                       (list (make-position 0.15 3 1.0) (make-position 0.4 3 1.0))
                       (list (make-position -.15 -3 1.0) (make-position 0.1 -3 1.0))
                       (list (make-position -0.55 -3 1.0) (make-position -0.8 -3 1.0))))
   
-  ; Useful for future patterns...
   
-  ; A hand (list throw catch) at radius r from 0 0 at angle a
-  (define (angle-hand a r lr)
-    
-    (let* 
-        (
-         (split (/ pi (* r 16)))
-         (a1 (- a split)) (a2 (+ a split)))
-      ((if (eq? lr 'right) reverse (lambda (x) x))
-       (list (make-position (* r (sin a2)) (* r (cos a2)) 1.0)
-            (make-position (* r (sin a1)) (* r (cos a1)) 1.0)))))
-  
-  (define triangle 
-      (list (angle-hand (- 0 (/ pi 16)) 2.5 'left) (angle-hand (+ 0 (/ pi 16)) 2.5 'right)
-            (angle-hand (- (* pi 2/3) (/ pi 12)) 2.5 'left) (angle-hand (+ (* pi 2/3) (/ pi 12)) 2.5 'right)
-            (angle-hand (- (* pi 4/3) (/ pi 12)) 2.5 'left) (angle-hand (+ (* pi 4/3) (/ pi 12)) 2.5 'right)))
-  
-  ; n jugglers r meters from center
-  (define 2pi (* 2 pi))
-  (define (juggler-circle n r)
-      (apply append
-             (for/list ((i (in-range 0 2pi (/ 2pi n))))
-               (list (angle-hand (- i (/ pi (* 4 r))) r 'left) (angle-hand (+ i (/ pi (* 4 r))) r 'right)))))
-    
-  (define funky-pair-of-jugglers
-    (list (list-ref pair-of-jugglers 0)
-          (list-ref pair-of-jugglers 2)
-          (list-ref pair-of-jugglers 1)
-          (list-ref pair-of-jugglers 3)))
-  
-  ; N jugglers do a self v (same hand if even, opposite if odd) from hand h ('left/'right)
-  (define (self n v h)
-    (sync (* 2 n) v (if (eq? h 'left) -1 +1) (if (eq? h 'left) odd? even?)))
-  
-  (define (sync number-of-hands throw-value destination-offset pred)
-    (map 
-     (lambda (i) (if (pred i) 
-                     (let* 
-                         ((unfixed-dest (+ i destination-offset))
-                          (dest-index (cond
-                                         ((>= unfixed-dest number-of-hands) (remainder unfixed-dest number-of-hands))
-                                         ((< unfixed-dest 0) (+ number-of-hands unfixed-dest))
-                                         (#t unfixed-dest))))                     
-                       (list throw-value dest-index)) '-))
-     (iota number-of-hands)))
-  
-  (define (3-count number-of-jugglers number-of-props)
-    (list (sync (* number-of-jugglers 2) number-of-props -1 even?) 
-          (sync (* number-of-jugglers 2) number-of-props -1 odd?) 
-          (sync (* number-of-jugglers 2) number-of-props 1 even?)
-          (sync (* number-of-jugglers 2) number-of-props 1 odd?) 
-          (sync (* number-of-jugglers 2) number-of-props 1 even?) 
-          (sync (* number-of-jugglers 2) number-of-props -1 odd?)))
-  
-    #;(65 juggler 3-count) #;(list (sync 370 3 1 even?) (sync 370 3 -1 odd?) (sync 370 3 -1 even?) (sync 370 3 -1 odd?) (sync 370 3 1 even?)  (sync 370 3 1 odd?))
-       
   
   
   )
