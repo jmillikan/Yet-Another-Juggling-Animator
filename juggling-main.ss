@@ -25,7 +25,14 @@
         (send canvas set-jugglers j))
       
       (define pattern-forms (instantiate pattern-forms% (control-panel)))
-      (instantiate-view-controls canvas control-panel)))
+      (instantiate-view-controls canvas control-panel)
+      
+      (define/public (set-error e)
+        (send error-box set-value e))
+      
+      (define error-box (instantiate text-field% ("" this)))
+      
+      ))
   
   ; Tab panels don't automatically change panels when clicked... You have to rig it up yourself. Awesome.
   (define pattern-forms% 
@@ -80,7 +87,7 @@
       
       (instantiate button% 
         ("Run" this (λ _ 
-                        (with-handlers ((exn:fail? (λ _ 'flagrant-error)))
+                        (with-handlers ((exn:fail? (λ (e) (send w set-error (exn-message e)))))
                           (let*   
                               ((beat-value (string->number (send input-beat get-value)))
                                (dwell-value (string->number (send input-dwell get-value)))
@@ -102,6 +109,10 @@
 ))
   
   
+  ; This stuff is necessary for the compiled version.
+      (define-namespace-anchor a)
+      (define example-namespace (namespace-anchor->namespace a))
+  
   (define scheme-form% 
     (class* vertical-panel% ()
       (init-field parent)
@@ -109,9 +120,13 @@
       
       (define hands-select (instantiate combo-field% ("Juggler/Hand List" hands-examples this) (min-width 250) (init-value "") (stretchable-width #t)))
       (define (get-hands)
-        (eval (call-with-input-string (send hands-select get-value) read)))
+        (eval (call-with-input-string (send hands-select get-value) read) example-namespace))
       
-      (instantiate pattern-line% ("Scheme List" "0.25" "0.2" "" (λ (s) (eval (call-with-input-string s read))) get-hands w sexp-examples this))
+      
+      (instantiate pattern-line% ("Scheme List" "0.25" "0.2" "" 
+                                                (λ (s) (eval (call-with-input-string s read) example-namespace)) 
+                                                
+                                                get-hands w sexp-examples this))
       (instantiate pattern-line% ("6-hand SS" "0.10" "0.08" "a" 6hss->sexp get-hands w 6-ss-examples this))))
   
   (define (instantiate-view-controls c h)
