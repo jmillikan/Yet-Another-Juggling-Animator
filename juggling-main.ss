@@ -32,7 +32,7 @@
     (class* tab-panel% ()
       (inherit get-selection add-child delete-child)
       (init-field w)
-      (super-instantiate ((list "2/4 Hand Siteswap" "Many Jugglers") w) 
+      (super-instantiate ((list "Easy Mode" "Hard Mode") w) 
         (callback (lambda (c x) (send this change-tab)))
         (min-width 400))
       ; Why does this have to be public?  ;_;
@@ -56,6 +56,7 @@
       (define scheme-form
         (instantiate scheme-form% (this)))
       
+      ; Is there a sane way to do this?
       (delete-child scheme-form)))
   
   ; A single line in the interface for pattern definition.
@@ -64,7 +65,7 @@
       (init-field name)
       (init-field initial-beat)
       (init-field initial-dwell)
-            (init-field initial-pattern)
+      (init-field initial-pattern)
       (init-field pattern-lambda) ; string -> sexp
       (init-field hands-lambda) ; thunk -> hands
       (init-field juggling-window) ; show juggling-window show-pattern...
@@ -74,12 +75,12 @@
       (super-instantiate (parent) (alignment '(center center)) (stretchable-width #t))
     
       (define input-pattern (instantiate combo-field% (name examples-list this) (min-width 250) (init-value initial-pattern) (stretchable-width #t)))
-      (define input-beat (instantiate text-field% ("" this) (init-value  initial-beat)))
-      (define input-dwell (instantiate text-field% ("" this) (init-value  initial-dwell)))
+      (define input-beat (instantiate text-field% ("" this) (init-value  initial-beat) (min-width 60) (stretchable-width #f)))
+      (define input-dwell (instantiate text-field% ("" this) (init-value  initial-dwell) (min-width 60) (stretchable-width #f)))
       
       (instantiate button% 
-        ("Run" this (lambda x 
-                        (with-handlers ((exn:fail? (lambda (e) 'flagrant-error)))
+        ("Run" this (λ _ 
+                        (with-handlers ((exn:fail? (λ _ 'flagrant-error)))
                           (let*   
                               ((beat-value (string->number (send input-beat get-value)))
                                (dwell-value (string->number (send input-dwell get-value)))
@@ -88,7 +89,7 @@
                             (send w show-pattern
                                   pattern
                                   (hands-lambda))))))
-        (stretchable-width #t))))
+        (stretchable-width #f))))
 
   
   (define siteswap-form% 
@@ -111,23 +112,22 @@
         (eval (call-with-input-string (send hands-select get-value) read)))
       
       (instantiate pattern-line% ("Scheme List" "0.25" "0.2" "" (λ (s) (eval (call-with-input-string s read))) get-hands w sexp-examples this))
-      (instantiate pattern-line% ("6-hand SS" "0.10" "0.08" "a" 6hss->sexp get-hands w 6-ss-examples this))      ))
+      (instantiate pattern-line% ("6-hand SS" "0.10" "0.08" "a" 6hss->sexp get-hands w 6-ss-examples this))))
   
   (define (instantiate-view-controls c h)
     (let ((v (instantiate vertical-panel% (h) (alignment '(center center)) (stretchable-width #f) (min-width 200))))
       (let ((h (instantiate horizontal-panel% (v)
                  (alignment '(center center)))))
-        (instantiate button% ("+" h (lambda x (send c zoom-in)))
+        (instantiate button% ("+" h (λ _ (send c zoom-in)))
           (stretchable-width #t))
-        (instantiate button% ("-" h (lambda x (send c zoom-out)))
+        (instantiate button% ("-" h (λ _ (send c zoom-out)))
           (stretchable-width #t)))
       (let* ((h-time (instantiate horizontal-panel% (v) (alignment '(center center)) (stretchable-width #f)))
              (time-input (instantiate text-field% ("Time Scale" h-time) (min-width 100) (init-value "1.0") (stretchable-width #t))))              
-        (instantiate button% ("Set" h-time (lambda x 
-                                             (with-handlers ((exn:fail? (lambda (e) 'flagrant-error)))
+        (instantiate button% ("Set" h-time (λ _ 
+                                             (with-handlers ((exn:fail? (λ _ 'flagrant-error)))
                                                (send c scale-time (call-with-input-string (send time-input get-value) read)))))
           (stretchable-width #f)))))
-  
   
   (set! w (make-object main-window))
   (send w show #t)
