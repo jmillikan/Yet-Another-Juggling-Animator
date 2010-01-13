@@ -108,10 +108,9 @@
       (instantiate pattern-line% ("Synchronous" "0.25" "0.20" "(6x,4)*" sync-ss->sexp (λ _ (juggler-circle 2 3.0)) w syncss-examples this))
 ))
   
-  
-  ; This stuff is necessary for the compiled version.
-      (define-namespace-anchor a)
-      (define example-namespace (namespace-anchor->namespace a))
+  ; For now, the stuff in the evals can see/do everything
+  (define-namespace-anchor nsa)  
+  (define eval-namespace (namespace-anchor->namespace nsa))
   
   (define scheme-form% 
     (class* vertical-panel% ()
@@ -120,11 +119,10 @@
       
       (define hands-select (instantiate combo-field% ("Juggler/Hand List" hands-examples this) (min-width 250) (init-value "") (stretchable-width #t)))
       (define (get-hands)
-        (eval (call-with-input-string (send hands-select get-value) read) example-namespace))
-      
+        (eval (call-with-input-string (send hands-select get-value) read) eval-namespace))
       
       (instantiate pattern-line% ("Scheme List" "0.25" "0.2" "" 
-                                                (λ (s) (eval (call-with-input-string s read) example-namespace)) 
+                                                (λ (s) (eval (call-with-input-string s read) eval-namespace)) 
                                                 
                                                 get-hands w sexp-examples this))
       (instantiate pattern-line% ("6-hand SS" "0.10" "0.08" "a" 6hss->sexp get-hands w 6-ss-examples this))))
