@@ -84,8 +84,8 @@
                  (a1-deg (radians->degrees a1))
                  (a2-deg (radians->degrees a2))
                  (spins
-                  (cond ((< tf .9) 1)
-                        ((< tf 1.5) 2)
+                  (cond ((< tf 1.1) 1)
+                        ((< tf 1.6) 2)
                         ((< tf 2.1) 3)
                         (#t 4))
                          ))
@@ -101,12 +101,21 @@
        (if (= tf 0) (lambda (t) p1)  
            (match (cons p1 p2)
              ((cons (struct position (x1 y1 z1)) (struct position (x2 y2 z2)))
-              (let ((mx (/ (- x2 x1) tf))
+              (let* ((mx (/ (- x2 x1) tf))
                     (bx x1)
                     (my (/ (- y2 y1) tf))
                     (by y1)
-                    (mz (+ (/ z2 tf) (/ (- z1) tf) (* 9.8 tf)))
-                    (bz z1)
+                    (catch-offset ; raise the catch point a bit for passes...
+                     (if (assoc 'orientation options)
+                                (if (eq? 'parallel (cadr (assoc 'orientation options)))
+                                    0.8 0.1) 0.0))
+                    (throw-offset
+                     (if (assoc 'orientation options)
+                                (if (eq? 'parallel (cadr (assoc 'orientation options)))
+                                    -0.3 -0.1) 0.0))
+                    
+                    (mz (+ (/ (+ z2 catch-offset) tf) (/ (- (+ z1 throw-offset)) tf) (* 9.8 tf)))
+                    (bz (+ z1 throw-offset))
                     
                     ; A demo to start getting club rotation working...
                     
@@ -127,7 +136,7 @@
                    (make-rotation
                                   (+ 
                                    -90
-                                   (* t (/ 
+                                   #;(* t (/ 
                                          
                                          (+ 
                                           (if (assoc 'orientation options)
@@ -145,7 +154,33 @@
                                   #;(+ 
                             90
                             (* t (/ 360 1000))); t is in ms, right? 1 rot/second for now
-                                  ))))))))))
+                                  )
+                   (make-rotation 0 0 (+
+                                       
+                                       ; The initial rotation, give it a little under-rotation just before passes.
+                                       (if (assoc 'orientation options)
+                                              (if (eq? 'parallel (cadr (assoc 'orientation options)))
+                                                  60 ; assume this is a pass for  now
+                                                  0 ; and this is a self
+                                                  )
+                                              0)
+                                       
+                                       ; The actual spin as the club moves along.
+                                       (-(* t (/ 
+                                         
+                                               (+ 
+                                                ; This branch adds the "extra" spin that brings passes perpendicular
+                                                ; to the ground
+                                          (if (assoc 'orientation options)
+                                              (if (eq? 'parallel (cadr (assoc 'orientation options)))
+                                                  150 ; assume this is a pass for  now
+                                                  ; 150 = 60 initial overspin (above) plus 90 degrees to get upright
+                                                  10 ; and this is a self
+                                                  )
+                                              10)  
+                                          (* spins 360)) 
+                                         
+                                         tf))))))))))))))
     
   (define (radians->degrees a)
     (* 57.2957795 a))
@@ -214,7 +249,8 @@
                       (+ (* mz t) bz))
                      
                      
-                     (make-rotation -90 y-rot -90)))))))))))
+                     (make-rotation -90 y-rot -90)
+                     (make-rotation 0 0 0)))))))))))
   
   ; Advance a path-state by t-tick
   (define (advance-path-state! ps t-tick)
@@ -239,8 +275,8 @@
   (define (map-pattern f pattern objects)
     (map (lambda (ps o)
            (match ps ((struct path-state (t (cons (struct path-segment (_ pos-f)) _)))
-                      (let-values (((pos rot) (pos-f t)))
-                        (f o pos rot)))))
+                      (let-values (((pos rot spin) (pos-f t)))
+                        (f o pos rot spin)))))
          (pattern-positions pattern) objects))
   
   (provide 

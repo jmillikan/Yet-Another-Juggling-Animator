@@ -241,7 +241,6 @@
           (when step? 
             (let ((last-interval (- (current-milliseconds) last-ms)))              
               (advance-pattern! internal-pattern (* view-time-scale (/ last-interval 1000))))
-              ;(advance-pattern! internal-pattern 0))
             
             (set! last-ms (current-milliseconds)))
           (with-gl-context
@@ -259,8 +258,12 @@
              (gl-rotate view-rotz 0.0 0.0 1.0)
              
              (map-pattern 
-              (lambda args
-                (match args ((list (list size r g b) (struct position (x y z)) (struct rotation (rot-x rot-y rot-z)))
+              (lambda (prop pos rot spin)
+                (match-let
+                    (((list size r g b) prop)
+                     ((struct position (x y z)) pos)
+                     ((struct rotation (rot-x rot-y rot-z)) rot)
+                     ((struct rotation (spin-x spin-y spin-z)) spin))                     
                   (begin
                     (gl-push-matrix)
                     (gl-material-v 'front
@@ -271,9 +274,13 @@
                     (gl-rotate rot-y 0 1.0 0)
                     (gl-rotate rot-z 0 0 1.0)
                     
+                    (gl-rotate spin-x 1.0 0 0)
+                    (gl-rotate spin-y 0 1.0 0)
+                    (gl-rotate spin-z 0 0 1.0)
+                    
                     (gl-call-list current-model)
                     (gl-normal 0 0 1)
-                    (gl-pop-matrix)))))
+                    (gl-pop-matrix))))
               internal-pattern colors)
              
              (if (procedure? jugglers) 

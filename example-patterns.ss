@@ -234,7 +234,7 @@
           "#;(Async gorilla hands) (mangle-hands (juggler-circle 3 3.0) '(3 0 1 2 4 5))"
           "#;(5-man dropback line) (dropback-line 3 3.0 #t #t)"
           "#;(40-man \"canoe\" (longboat?)) (append (dropback-line 19 3.0 #t #f) (translate-hands (rotate-hands (dropback-line 19 3.0 #t #f) pi) 60 3 0))"
-          "#;(11-man feed) (append (take (juggler-circle 30 10.0) 20) (rotate-hands pair-of-hands (/ pi 3.5)))"
+          "#;(11-man feed, elevated feeder) (append (take (juggler-circle 30 10.0) 20) (translate-hands (rotate-hands pair-of-hands (* pi 9/7)) 0 0 3.0)))"
           ))
   
   (define 3-man-line (list
