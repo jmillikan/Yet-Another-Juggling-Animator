@@ -31,7 +31,6 @@
         (send error-box set-value e))
       
       (define error-box (instantiate text-field% ("" this)))
-      
       ))
   
   ; Tab panels don't automatically change panels when clicked... You have to rig it up yourself. Awesome.

@@ -7,45 +7,24 @@
     (map list-ref (circular-list hands) order))
   
   ; Useful for future patterns...
-  
-  ; A hand (list throw catch) at radius r from 0 0 at angle a
+     ; A hand (list throw catch) at radius r from 0 0 at angle a, pointing at 0,0
   (define (angle-hand a r lr)
-    
     (let* 
-        (
-         (split (/ pi (* r 16)))
-         (a1 (- a split)) (a2 (+ a split)))
-      ((if (eq? lr 'right) reverse (lambda (x) x))
-       (list (make-position (* r (sin a2)) (* r (cos a2)) 1.0)
-            (make-position (* r (sin a1)) (* r (cos a1)) 1.0)))))
-  
-  (define (rotate p angle)
-    (match-let (((struct position (x y z)) p))
-      (make-position
-       (+ (* x (cos (- angle))) (* y (sin angle)))
-       (+ (* y (cos angle)) (* x (sin (- angle))))
-       z)))
-  
-  (define (rotate-hands hands angle)
-    (map (λ (hand) (list (rotate (car hand) angle) (rotate (cadr hand) angle))) hands))
-  
-  (define (translate p x y z)
-    (match-let (((struct position (x1 y1 z1)) p))
-      (make-position
-       (+ x x1)
-       (+ y y1)
-       (+ z z1))))
-  
-  (define (translate-hands hands x y z)
-    (map (λ (hand) (list (translate (car hand) x y z) (translate (cadr hand) x y z))) hands))
-
+        ((split (/ pi (* r 16)))
+         (a1 (- a split)) (a2 (+ a split))
+         (p1 (make-position (* r (sin a2)) (* r (cos a2)) 1.0))
+         (p2 (make-position (* r (sin a1)) (* r (cos a1)) 1.0)))
+       (make-hand (if (eq? lr 'right) p2 p1)
+                  (if (eq? lr 'right) p1 p2)
+                  (+ a pi))))
+ 
   (define pair-of-hands
-    (list (list (make-position 0.35 0 1.0) (make-position 0.60 -0.05 1.1))
-          (list (make-position -0.35 0 1.0) (make-position -0.60 -0.05 1.1))))
+    (list (make-hand (make-position 0.35 0 1.0) (make-position 0.60 -0.05 1.1) (* pi -5/12))
+          (make-hand (make-position -0.35 0 1.0) (make-position -0.60 -0.05 1.1) (* pi -7/12))))
   
   (define pair-of-jugglers 
-    (append (translate-hands pair-of-hands 0 2.0 0)
-            (translate-hands (rotate-hands pair-of-hands pi) 0 -2.0 0)))
+    (append (translate-hands (rotate-hands pair-of-hands pi) 0 2.0 0)
+            (translate-hands  pair-of-hands 0 -2.0 0)))
   
   
   (define triangle 
@@ -58,7 +37,8 @@
   (define (juggler-circle n r)
       (apply append
              (for/list ((i (in-range 0 (- 2pi (/ 2pi (* n 2))) (/ 2pi n))))
-               (list (angle-hand (- i (/ pi (* 4 r))) r 'left) (angle-hand (+ i (/ pi (* 4 r))) r 'right)))))
+               (rotate-hands (translate-hands pair-of-hands 0 (- r) 0) i)
+               #;(list (angle-hand (- i (/ pi (* 4 r))) r 'left) (angle-hand (+ i (/ pi (* 4 r))) r 'right)))))
   
   (define (juggler-line n space angle) ; Jugglers from 0,0 in a line along angle 0 facing toward "angle"
     (apply append
@@ -214,6 +194,7 @@
       "#;(65 juggler 3-count) (list (sync 130 3 1 even?) (sync 130 3 -1 odd?) (sync 130 3 -1 even?) (sync 130 3 -1 odd?) (sync 130 3 1 even?)  (sync 130 3 1 odd?))"
       "#;(600 juggler 3-count - Slow) (3-count 600 3)"
       "#;(5-club feed, 10 feedees) (typewriter-feed 11 2 5)"
+      "#;(7-club singles) '(((11 3) - - -) () (- (10 0)) (- - (11 1)) () (- - - (10 2)))"
       
       ))
   

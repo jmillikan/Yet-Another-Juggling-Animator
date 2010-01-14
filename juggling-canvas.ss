@@ -191,7 +191,8 @@
         (set! club-model (gl-gen-lists 1))
         (gl-new-list club-model 'compile)
         (gl-rotate -90 1.0 0 0)
-        (gl-sphere quadric 0.04 5 5)
+        (gl-translate 0 0 -0.3)
+        (gl-sphere quadric 0.045 5 5)
         (gl-cylinder quadric 0.025 0.04 0.2 10 1)
         (gl-translate 0 0 0.2)
         (gl-cylinder quadric 0.04 0.085 0.2 10 1)
@@ -270,21 +271,6 @@
                     (gl-rotate rot-y 0 1.0 0)
                     (gl-rotate rot-z 0 0 1.0)
                     
-                    ; Balls...
-;                    (gl-sphere quadric 0.1 10 10)
-                    ;(gl-call-list ball-model)
-                    
-                    ;(gl-call-list ring-model)
-                    ; Rings                    
-                    ;(gl-disk quadric 0.23 0.32 10 1)            
-                    ;(gl-cylinder quadric 0.32 0.32 0.02 10 1)
-                    ;(gl-quadric-orientation quadric 'inside)
-                    ;(gl-cylinder quadric 0.23 0.23 0.02 10 1)
-                    ;(gl-quadric-orientation quadric 'outside)
-                    ;(gl-translate 0.0 0.0 0.02)
-                    ;(gl-rotate 180 1.0 0 0)                    
-                    ;(gl-disk quadric 0.23 0.32 10 1)
-                    
                     (gl-call-list current-model)
                     (gl-normal 0 0 1)
                     (gl-pop-matrix)))))
@@ -326,32 +312,48 @@
       (define (jugglers-lambda hands-lst)
         (lambda ()       
           (map 
-           (lambda (hand) ; render squares vaguely under both the throw and catch position.
-             (match hand ((list (struct position (x1 y1 z1)) (struct position (x2 y2 z2)))
-                          (begin
-                            
-                            
-                            (gl-material-v 'front
-                                           'ambient-and-diffuse
-                                           (vector->gl-float-vector (vector 0.2 1.0 0.3 1.0)))
-                            
-                            (gl-begin 'quads)
-                            (gl-vertex (+ x1 0.2) (+ y1 0.2) (- z1 1.0))
-                            (gl-vertex (- x1 0.2) (+ y1 0.2) (- z1 1.0))
-                            (gl-vertex (- x1 0.2) (- y1 0.2) (- z1 1.0))
-                            (gl-vertex (+ x1 0.2) (- y1 0.2) (- z1 1.0))
-                            (gl-end)
-                            
-                            (gl-material-v 'front
-                                           'ambient-and-diffuse
-                                           (vector->gl-float-vector (vector 1.0 0.2 0.1 1.0)))
-                            
-                            (gl-begin 'quads)
-                            (gl-vertex (+ x2 0.2) (+ y2 0.2) (- z2 1.0))
-                            (gl-vertex (- x2 0.2) (+ y2 0.2) (- z2 1.0))
-                            (gl-vertex (- x2 0.2) (- y2 0.2) (- z2 1.0))
-                            (gl-vertex (+ x2 0.2) (- y2 0.2) (- z2 1.0))
-                            (gl-end)))))
+           (lambda (h) ; render squares vaguely under both the throw and catch position.
+             ; render arrow in the direction of angle from x1 y1
+             (match-let 
+                 (((struct hand ((struct position (x1 y1 z1)) (struct position (x2 y2 z2)) angle)) h))
+               (begin
+                 (gl-material-v 'front
+                                'ambient-and-diffuse
+                                (vector->gl-float-vector (vector 0.2 1.0 0.3 1.0)))
+                 
+                 (gl-begin 'quads)
+                 (gl-vertex (+ x1 0.2) (+ y1 0.2) (- z1 1.0))
+                 (gl-vertex (- x1 0.2) (+ y1 0.2) (- z1 1.0))
+                 (gl-vertex (- x1 0.2) (- y1 0.2) (- z1 1.0))
+                 (gl-vertex (+ x1 0.2) (- y1 0.2) (- z1 1.0))
+                 (gl-end)
+                 
+                 (gl-material-v 'front
+                                'ambient-and-diffuse
+                                (vector->gl-float-vector (vector 1.0 0.2 0.1 1.0)))
+                 
+                 (gl-begin 'quads)
+                 (gl-vertex (+ x2 0.2) (+ y2 0.2) (- z2 1.0))
+                 (gl-vertex (- x2 0.2) (+ y2 0.2) (- z2 1.0))
+                 (gl-vertex (- x2 0.2) (- y2 0.2) (- z2 1.0))
+                 (gl-vertex (+ x2 0.2) (- y2 0.2) (- z2 1.0))
+                 (gl-end)
+                 
+                 (gl-material-v 'front
+                                'ambient-and-diffuse
+                                (vector->gl-float-vector (vector 0.2 1.0 0.3 1.0)))
+                 
+                 ; There's way more obvious ways to do this just using OpenGL... Oh well.
+                 (match-let*
+                     ((unit (make-position 1 0 0))
+                      ((struct position (ax ay _)) (rotate unit angle)))
+                   (begin
+                     (gl-begin 'lines)
+                     (gl-vertex x1 y1 (- z1 1.0))
+                     (gl-vertex (+ x1 ax) (+ ay y1) (- z1 1.0))
+                     (gl-end)))
+                                
+                            )))
            
            hands-lst)))
       
