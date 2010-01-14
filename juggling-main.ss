@@ -103,9 +103,12 @@
     (class* vertical-panel% ()
       (init-field parent)
       (super-instantiate (parent) (alignment '(center center)) (stretchable-height #f))
-      (instantiate pattern-line% ("Siteswap" "0.25" "0.16" "744" 2hss->sexp (λ _ pair-of-hands) w 2-ss-examples this))
-      (instantiate pattern-line% ("4-hand SS" "0.15" "0.13" "966" 4hss->sexp (λ _ (juggler-circle 2 3.0)) w 4-hand-examples this))
-      (instantiate pattern-line% ("Synchronous" "0.25" "0.20" "(6x,4)*" sync-ss->sexp (λ _ (juggler-circle 2 3.0)) w syncss-examples this))
+      (instantiate pattern-line% ("Siteswap" "0.25" "0.16" "744" 2hss->sexp 
+                                             (λ _ pair-of-hands) w 2-ss-examples this))
+      (instantiate pattern-line% ("4-hand SS" "0.15" "0.13" "966" 4hss->sexp 
+                                              (λ _ (juggler-circle 2 3.0)) w 4-hand-examples this))
+      (instantiate pattern-line% ("Synchronous" "0.25" "0.20" "(6x,4)*" sync-ss->sexp 
+                                                (λ _ (juggler-circle 2 3.0)) w syncss-examples this))
 ))
   
   ; For now, the stuff in the evals can see/do everything
@@ -122,8 +125,7 @@
         (eval (call-with-input-string (send hands-select get-value) read) eval-namespace))
       
       (instantiate pattern-line% ("Scheme List" "0.25" "0.2" "" 
-                                                (λ (s) (eval (call-with-input-string s read) eval-namespace)) 
-                                                
+                                                (λ (s) (eval (call-with-input-string s read) eval-namespace))
                                                 get-hands w sexp-examples this))
       (instantiate pattern-line% ("6-hand SS" "0.10" "0.08" "a" 6hss->sexp get-hands w 6-ss-examples this))))
   
@@ -135,6 +137,11 @@
           (stretchable-width #t))
         (instantiate button% ("-" h (λ _ (send c zoom-out)))
           (stretchable-width #t)))
+      (instantiate combo-field% ("Object" (list "ball" "ring" "club") v) (callback 
+                                                                              (λ (l v) 
+                                                                                (with-handlers ((exn:fail? (λ (e) (send w set-error (exn-message e)))))
+                                                                                  (send c set-model 
+                                                                                      (send l get-value))))))
       (let* ((h-time (instantiate horizontal-panel% (v) (alignment '(center center)) (stretchable-width #f)))
              (time-input (instantiate text-field% ("Time Scale" h-time) (min-width 100) (init-value "1.0") (stretchable-width #t))))              
         (instantiate button% ("Set" h-time (λ _ 

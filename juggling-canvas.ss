@@ -33,6 +33,14 @@
       
       (define last-ms #f)
       
+      (define current-model #f)
+      
+      (define/public (set-model m)
+        (cond ((equal? m "ball") (set! current-model ball-model))
+              ((equal? m "ring") (set! current-model ring-model))
+              ((equal? m "club") (set! current-model club-model))
+              (#t 'flagrant-error)))
+      
       (define grid-size 100.0)
       (define grid-unit 1.0)
       
@@ -156,12 +164,49 @@
              (set! quadric (gl-new-quadric))
              (set! last-ms (current-milliseconds))
              (set! internal-pattern (make-pattern '()))
+             (create-objects)
+             (set! current-model ball-model)
              
              (gl-enable 'normalize))))
         (refresh))
       
+      (define (create-objects)
+        (set! ball-model (gl-gen-lists 1))
+        (gl-new-list ball-model 'compile)          
+        (gl-sphere quadric 0.1 10 10)
+        (gl-end-list)
+        
+        (set! ring-model (gl-gen-lists 1))
+        (gl-new-list ring-model 'compile)
+        (gl-disk quadric 0.23 0.32 10 1)            
+        (gl-cylinder quadric 0.32 0.32 0.02 10 1)
+        (gl-quadric-orientation quadric 'inside)
+        (gl-cylinder quadric 0.23 0.23 0.02 10 1)
+        (gl-quadric-orientation quadric 'outside)
+        (gl-translate 0.0 0.0 0.02)
+        (gl-rotate 180 1.0 0 0)                    
+        (gl-disk quadric 0.23 0.32 10 1)
+        (gl-end-list)    
+        
+        (set! club-model (gl-gen-lists 1))
+        (gl-new-list club-model 'compile)
+        (gl-rotate -90 1.0 0 0)
+        (gl-sphere quadric 0.04 5 5)
+        (gl-cylinder quadric 0.025 0.04 0.2 10 1)
+        (gl-translate 0 0 0.2)
+        (gl-cylinder quadric 0.04 0.085 0.2 10 1)
+        (gl-translate 0 0 0.2)
+        (gl-cylinder quadric 0.085 0.05 0.2 10 1)
+        (gl-translate 0 0 0.2)
+        (gl-sphere quadric 0.05 5 5)
+        
+        ;(gl-translate
+        (gl-end-list)
+        )
+        
+      
       ; This is misnamed... At the moment, it's colors.
-      (define balls
+      (define colors
         (circular-list
            '(0.1 0.1 0.1 1.0) 
            '(0.1 1.0 0.1 0.1)
@@ -171,6 +216,12 @@
            '(0.1 0.6 0.1 0.6)
            '(0.1 1.0 0.2 0.6)
            ))
+      
+      (define ball-model #f)
+      
+      (define ring-model #f)
+          
+      (define club-model #f)
       
       (define/public (set-pattern p)
         (if (pattern? p)
@@ -220,21 +271,24 @@
                     (gl-rotate rot-z 0 0 1.0)
                     
                     ; Balls...
-                    ;(gl-sphere quadric 0.1 10 10)
+;                    (gl-sphere quadric 0.1 10 10)
+                    ;(gl-call-list ball-model)
                     
+                    ;(gl-call-list ring-model)
                     ; Rings                    
-                    (gl-disk quadric 0.23 0.32 10 1)            
-                    (gl-cylinder quadric 0.32 0.32 0.02 10 1)
-                    (gl-quadric-orientation quadric 'inside)
-                    (gl-cylinder quadric 0.23 0.23 0.02 10 1)
-                    (gl-quadric-orientation quadric 'outside)
-                    (gl-translate 0.0 0.0 0.02)
-                    (gl-rotate 180 1.0 0 0)                    
-                    (gl-disk quadric 0.23 0.32 10 1)
+                    ;(gl-disk quadric 0.23 0.32 10 1)            
+                    ;(gl-cylinder quadric 0.32 0.32 0.02 10 1)
+                    ;(gl-quadric-orientation quadric 'inside)
+                    ;(gl-cylinder quadric 0.23 0.23 0.02 10 1)
+                    ;(gl-quadric-orientation quadric 'outside)
+                    ;(gl-translate 0.0 0.0 0.02)
+                    ;(gl-rotate 180 1.0 0 0)                    
+                    ;(gl-disk quadric 0.23 0.32 10 1)
                     
+                    (gl-call-list current-model)
                     (gl-normal 0 0 1)
                     (gl-pop-matrix)))))
-              internal-pattern balls)
+              internal-pattern colors)
              
              (if (procedure? jugglers) 
                    (jugglers) '())
@@ -279,14 +333,20 @@
                             
                             (gl-material-v 'front
                                            'ambient-and-diffuse
-                                           (vector->gl-float-vector (vector 0.9 0.9 0.9 1.0)))
+                                           (vector->gl-float-vector (vector 0.2 1.0 0.3 1.0)))
                             
                             (gl-begin 'quads)
                             (gl-vertex (+ x1 0.2) (+ y1 0.2) (- z1 1.0))
                             (gl-vertex (- x1 0.2) (+ y1 0.2) (- z1 1.0))
                             (gl-vertex (- x1 0.2) (- y1 0.2) (- z1 1.0))
                             (gl-vertex (+ x1 0.2) (- y1 0.2) (- z1 1.0))
+                            (gl-end)
                             
+                            (gl-material-v 'front
+                                           'ambient-and-diffuse
+                                           (vector->gl-float-vector (vector 1.0 0.2 0.1 1.0)))
+                            
+                            (gl-begin 'quads)
                             (gl-vertex (+ x2 0.2) (+ y2 0.2) (- z2 1.0))
                             (gl-vertex (- x2 0.2) (+ y2 0.2) (- z2 1.0))
                             (gl-vertex (- x2 0.2) (- y2 0.2) (- z2 1.0))
