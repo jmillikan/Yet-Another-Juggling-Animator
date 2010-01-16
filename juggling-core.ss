@@ -77,6 +77,11 @@
   ; Functions for creating toss and dwell segments for any normal ball-throwing pattern
   ; Closures should be way more than fast enough under a few hundred fps and a few dozen objects. Massive speedup would be... Storing data separately from fn.
   
+  (define (option options name)
+    (if (assoc name options)
+        (cadr (assoc name options))
+        'default))
+  
   ; Todo: Fix rotation for clubs^Wrings
   (define (ball-toss-path-segment tf h1 h2 . options)
     (match-let* (((struct hand (p1 _ a1)) h1)
@@ -88,7 +93,17 @@
                         ((< tf 1.6) 2)
                         ((< tf 2.1) 3)
                         (#t 4))
-                         ))
+                         )
+                 
+                 ; raise the catch point a bit for passes...
+                 (catch-offset (match (option options 'orientation)
+                                 ('parallel 0.8)
+                                 ('perpendicular 0.1)
+                                 ('default 0.0)))
+                 (throw-offset (match (option options 'orientation)
+                                 ('parallel -0.3)
+                                 ('perpendicular -0.1)
+                                 ('default 0.0))))
       (make-path-segment 
        tf
        ; Solve for parametric function p(t) with gravity pulling negative on z
@@ -102,27 +117,18 @@
            (match (cons p1 p2)
              ((cons (struct position (x1 y1 z1)) (struct position (x2 y2 z2)))
               (let* ((mx (/ (- x2 x1) tf))
-                    (bx x1)
-                    (my (/ (- y2 y1) tf))
-                    (by y1)
-                    (catch-offset ; raise the catch point a bit for passes...
-                     (if (assoc 'orientation options)
-                                (if (eq? 'parallel (cadr (assoc 'orientation options)))
-                                    0.8 0.1) 0.0))
-                    (throw-offset
-                     (if (assoc 'orientation options)
-                                (if (eq? 'parallel (cadr (assoc 'orientation options)))
-                                    -0.3 -0.1) 0.0))
+                     (bx x1)
+                     (my (/ (- y2 y1) tf))
+                     (by y1)
                     
-                    (mz (+ (/ (+ z2 catch-offset) tf) (/ (- (+ z1 throw-offset)) tf) (* 9.8 tf)))
-                    (bz (+ z1 throw-offset))
-                    
-                    (y-rot
-                            (if (assoc 'orientation options)
-                                (if (eq? 'parallel (cadr (assoc 'orientation options)))
-                                    (get-angle (- x1 x2) (- y1 y2))
-                                    a2-deg #;(+ 90 (get-angle (- x1 x2) (- y1 y2))))
-                                (+ 90 (get-angle (- x1 x2) (- y1 y2))))))    
+                     (mz (+ (/ (+ z2 catch-offset) tf) (/ (- (+ z1 throw-offset)) tf) (* 9.8 tf)))
+                     (bz (+ z1 throw-offset))
+                     
+                     (y-rot
+                      (match (option options 'orientation)
+                        ('parallel (get-angle (- x1 x2) (- y1 y2)))
+                        ('perpendicular a2-deg)
+                        ('default (+ 90 (get-angle (- x1 x2) (- y1 y2)))))))
                 (lambda (t)         
                   (values 
                    (make-position 
@@ -131,54 +137,25 @@
                     (+ (* -9.8 t t) (* mz t) bz))
                    
                    ; Ugh. Since I'm bad at math, we need two different rotations here. (One to orient it "straight" and another for the spin.)
-                   (make-rotation
-                                  (+ 
-                                   -90
-                                   #;(* t (/ 
-                                         
-                                         (+ 
-                                          (if (assoc 'orientation options)
-                                              (if (eq? 'parallel (cadr (assoc 'orientation options)))
-                                                  90 ; assume this is a pass for  now
-                                                  10 ; and this is a self
-                                                  )
-                                              10)  
-                                          (* spins 360)) 
-                                         
-                                         tf)))
-                                  y-rot 
-                           ;start getting club rotation going
-                                  -90
-                                  #;(+ 
-                            90
-                            (* t (/ 360 1000))); t is in ms, right? 1 rot/second for now
-                                  )
+                   (make-rotation -90 y-rot -90)
                    (make-rotation 0 0 (+
-                                       
-                                       ; The initial rotation, give it a little under-rotation just before passes.
-                                       (if (assoc 'orientation options)
-                                              (if (eq? 'parallel (cadr (assoc 'orientation options)))
-                                                  60 ; assume this is a pass for  now
-                                                  0 ; and this is a self
-                                                  )
-                                              0)
+                                       (match (option options 'orientation)
+                                         ('parallel 60)
+                                         ('perpendicular 0)
+                                         ('default 0))
                                        
                                        ; The actual spin as the club moves along.
-                                       (-(* t (/ 
-                                         
-                                               (+ 
-                                                ; This branch adds the "extra" spin that brings passes perpendicular
-                                                ; to the ground
-                                          (if (assoc 'orientation options)
-                                              (if (eq? 'parallel (cadr (assoc 'orientation options)))
-                                                  150 ; assume this is a pass for  now
-                                                  ; 150 = 60 initial underspin (above) plus 90 degrees to get upright
-                                                  10 ; and this is a self
-                                                  )
-                                              10)  
-                                          (* spins 360)) 
-                                         
-                                         tf))))))))))))))
+                                       
+                                       (- (* t (/ 
+                                                (+ 
+                                                 ; This branch adds the "extra" spin that brings passes perpendicular
+                                                 ; to the ground
+                                                 (match (option options 'orientation)
+                                                   ('parallel 150) ; 90 degrees from ground + 60 offset from above
+                                                   ('perpendicular 10)
+                                                   ('default 10))  
+                                                 (* spins 360)) 
+                                             tf))))))))))))))
     
   (define (radians->degrees a)
     (* 57.2957795 a))
@@ -227,25 +204,28 @@
              (match (cons p1 p2) 
                
                ((cons (struct position (x1 y1 z1)) (struct position (x2 y2 z2)))
-                (let ((mx (/ (- x2 x1) tf))
-                      (bx x1)
-                      (my (/ (- y2 y1) tf))
-                      (by y1)
-                      (mz (/ (- z2 z1) tf))
-                      (bz z1)
-                      
-                      (y-rot (if (assoc 'orientation options)
-                                (if (eq? 'parallel (cadr (assoc 'orientation options)))
-                                    (get-angle (- x1 x2) (- y1 y2))
-                                    a1-deg #;(+ 90 (get-angle (- x1 x2) (- y1 y2))))
-                                a1-deg)))                                    
+                (let* (
+                       (catch-offset (match (option options 'orientation)
+                                       ('parallel 0.8)
+                                       ('perpendicular 0.1)
+                                       ('default 0.0)))
+                       (mx (/ (- x2 x1) tf))
+                       (bx x1)
+                       (my (/ (- y2 y1) tf))
+                       (by y1)
+                       (mz (/ (- z2 (+ z1 catch-offset)) tf))
+                       (bz (+ z1 catch-offset))
+                       
+                       (y-rot a1-deg #;(match (option options 'orientation)
+                                ('parallel (get-angle (- x1 x2) (- y1 y2)))
+                                ('perpendicular a1-deg)
+                                ('default a1-deg))))                           
                   (lambda (t)        
                     (values
                      (make-position 
                       (+ (* mx t) bx)
                       (+ (* my t) by)
                       (+ (* mz t) bz))
-                     
                      
                      (make-rotation -90 y-rot -90)
                      (make-rotation 0 0 0)))))))))))

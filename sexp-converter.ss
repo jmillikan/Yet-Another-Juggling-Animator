@@ -4,19 +4,16 @@
   
   (provide 
    sexp->pattern
-   
    )
   
-  
-  ; (list '- '* '* '())
-  ; (delay next-throw last-throw throw-list-backwards)
+  ; (list '- '* '* '() '-)
+  ; (delay next-throw last-throw throw-list-backwards first-hand)
   
   (define (replace-item list elem new-elem)
     (cond
       ((null? list) '())
       ((equal? (car list) elem) (cons new-elem list))
       (#t (cons (car list) (replace-item (cdr list) elem new-elem)))))                  
-  
   
   ; UUUUUUGH, TODO: LAST THROW MUST MATCH HAND THROWN FROM. ID WON'T WORK.
   ; This function *did* get to long... Let's see, what can I exorcise to somewhere else?
@@ -45,8 +42,6 @@
   (define (star-pattern p)
     (map star-beat p))
   
-  
-  
   (define (star-beat b)
     (match b ((list-rest right-throw left-throw rest)
               (cons (star-throw left-throw) (cons (star-throw right-throw) (star-beat rest))))
@@ -59,7 +54,6 @@
                                 (add1 hand)
                                 (sub1 hand)) rest)))
       (rest rest)))
-  
   
   ; Like star-pattern, except it swaps the places of jugglers one and two (and any subsequent pairs) instead of the hands of juggler one.
   (define (twostar-pattern p)
@@ -86,21 +80,24 @@
                             (begin 
                               (list (dwell-hold-path-segment (* beat-value (car current-throw)) throw-hand))))
                            (#t
-                             (list
-                              ; 1st dwell segment comes right after...
-                              (dwell-hold-path-segment dwell-value catch-hand)
-                              ; 1st toss segment
-                              (ball-toss-path-segment 
-                               (- (* beat-value (car current-throw)) dwell-value) 
-                               throw-hand catch-hand
-                               (list 'orientation
-                                     (let ((orientation 
-                                            (if (= (floor (/ current-hand 2)) (floor (/ (cadr current-throw) 2))) 
-                                                'perpendicular ; pass! Paralell to throw line
-                                                'parallel ; Hand to hand - perpendicular to throw line.
-                                                )))
-                                       orientation))))
-                       ))))
+                            (let ((orientation 
+                                   (if (= (floor (/ current-hand 2)) (floor (/ (cadr current-throw) 2))) 
+                                       'perpendicular ; pass! Paralell to throw line
+                                       'parallel ; Hand to hand - perpendicular to throw line.
+                                       )))
+                              (list
+                               ; 1st dwell segment comes right after...
+                               (dwell-hold-path-segment dwell-value catch-hand
+                                                        (list 'orientation
+                                     
+                                      orientation))
+                               ; 1st toss segment
+                               (ball-toss-path-segment 
+                                (- (* beat-value (car current-throw)) dwell-value) 
+                                throw-hand catch-hand
+                                (list 'orientation
+                                     
+                                      orientation))))))))
     
   ; There is funky, heavy duplication between this and update-object
     (define (start-object objects starting-object current-throw time current-hand)
@@ -195,7 +192,6 @@
                                              updated-objects
                                              (cdr throws-this-beat) 
                                              (add1 hand))))))))))))))
-  ; TODO: 
   
   (define (throw-value throw)
     (match throw 
@@ -222,16 +218,10 @@
                    (_ #f)))
      objects))
   
-  
   (define (match-waiting objects)
     (filter
      (lambda (o) (match o ((list _ '* _ _ _) #t) (_ #f)))
      objects))
-  
-  
-  ;
-  
-  
   
   (define (ss-value sexp-pattern)
     (/ (foldr + 0 (map car (filter pair? (apply append sexp-pattern)))) (length sexp-pattern)))
