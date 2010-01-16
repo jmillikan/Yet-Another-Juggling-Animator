@@ -7,29 +7,6 @@
    
    )
   
-  #;(begin
-      ; example sexp patterns
-      (define 5-sexp '(((5 1) -) (- (5 0))))  
-      (define 7531-sexp '(((7 1) -) (- (5 0)) ((3 1) -) (- (1 0))))  
-      (define 2count-sexp '(((3 3) - (3 1) -) (- (3 0) - (3 2))))
-      
-      ; example hand lists
-      (define ex-left-throw (make-position -0.2 0 0))
-      (define ex-left-catch (make-position -0.4 0 0))
-      (define ex-right-throw (make-position 0.2 0 0))
-      (define ex-right-catch (make-position 0.4 0 0))
-      
-      (define pair-of-hands (list (list ex-right-throw ex-right-catch) (list ex-left-throw ex-left-catch)))    
-      
-      (define pair-of-jugglers (list (list  ex-right-throw ex-right-catch) 
-                                     (list ex-left-throw ex-left-catch)
-                                     (list (make-position -0.2 3 0) (make-position -0.4 3 0))
-                                     (list (make-position 0.2 3 0) (make-position 0.4 3 0))))
-      (define funky-pair-of-jugglers
-        (list (list-ref pair-of-jugglers 0)
-              (list-ref pair-of-jugglers 2)
-              (list-ref pair-of-jugglers 1)
-              (list-ref pair-of-jugglers 3))))
   
   ; (list '- '* '* '())
   ; (delay next-throw last-throw throw-list-backwards)
@@ -100,72 +77,62 @@
       (three-or-less-hands three-or-less-hands)))
   
   (define (sexp->pattern-internal sexp-pattern beat-value dwell-value hands-lst)    
-    (define (start-object objects starting-object current-throw time current-hand)
-      (let ((new-object
-             (list time ; delay - not used
-                   current-throw ; next-throw, counted down
-                   current-throw ; last throw, tested with eq? for identity
-                   #;(match (cons (list-ref hands-lst current-hand) (list-ref hands-lst (cadr current-throw))) ; Destructure hands... This is all so freaking busy.
-                       ((cons (list start-throw start-catch) (list end-throw end-catch))))
-                   (let
+    (define (build-segments current-hand current-throw)
+             (let
                        ((throw-hand (list-ref hands-lst current-hand))
                         (catch-hand (list-ref hands-lst (cadr current-throw))))
-                     (list
-                      ; 1st dwell segment comes right after...
-                      (dwell-hold-path-segment dwell-value catch-hand)
-                      ; 1st toss segment
-                      (ball-toss-path-segment 
-                       (- (* beat-value (car current-throw)) dwell-value) 
-                       throw-hand catch-hand
-                       (list 'orientation
-                             (let ((orientation 
-                                    (if (= (floor (/ current-hand 2)) (floor (/ (cadr current-throw) 2))) 
-                                        'perpendicular ; pass! Paralell to throw line
-                                        'parallel ; Hand to hand - perpendicular to throw line.
-                                        )))
-                               #;(display (format "~a to ~a, ~a~n" current-hand (cadr current-throw) orientation))
-                               orientation))
-                       ))))))
+                     (cond ((and (= (car current-throw) 2 #;(length (car sexp-pattern))) ; Long dwell on at least SOME 2s. Will still look a bit funky.
+                                 (= current-hand (cadr current-throw))) 
+                            (begin 
+                              (list (dwell-hold-path-segment (* beat-value (car current-throw)) throw-hand))))
+                           (#t
+                             (list
+                              ; 1st dwell segment comes right after...
+                              (dwell-hold-path-segment dwell-value catch-hand)
+                              ; 1st toss segment
+                              (ball-toss-path-segment 
+                               (- (* beat-value (car current-throw)) dwell-value) 
+                               throw-hand catch-hand
+                               (list 'orientation
+                                     (let ((orientation 
+                                            (if (= (floor (/ current-hand 2)) (floor (/ (cadr current-throw) 2))) 
+                                                'perpendicular ; pass! Paralell to throw line
+                                                'parallel ; Hand to hand - perpendicular to throw line.
+                                                )))
+                                       orientation))))
+                       ))))
+    
+  ; There is funky, heavy duplication between this and update-object
+    (define (start-object objects starting-object current-throw time current-hand)
+      (let ((new-object
+             (list time ; delay
+                   current-throw ; next-throw, counted down
+                   current-throw ; last throw, tested with eq? for identity
+                   (build-segments current-hand current-throw)
+                   current-hand ; first hand, for use later
+                   )))
         (values #f (replace eq? objects starting-object new-object))))    
     
     (define (update-object objects object-matching-throw current-throw time current-hand)
       (match object-matching-throw 
-        ((list delay next-throw last-throw throw-list)
+        ((list delay next-throw last-throw throw-list first-hand)
          (if (eq? last-throw current-throw) ; circular list, so ID works... We just have to store the exact throw.                
              ; Around to the start. Don't add this throw, it matches the 1st one.
              (values #t (replace eq? objects object-matching-throw 
-                                 (list delay '- last-throw throw-list)))
+                                 (list delay '- last-throw throw-list first-hand)))
              ; Not the last throw. Add dwell and toss backwards, update next throw           
              (values #f 
                      (replace 
                       eq? objects object-matching-throw                              
                       (list delay current-throw last-throw 
-                            (let ((throw-hand (list-ref hands-lst current-hand))
-                                  (catch-hand (list-ref hands-lst (cadr current-throw))))
-                              
-                              ; These get reversed.
-                              (cons (dwell-hold-path-segment dwell-value catch-hand)
-                                    (cons (ball-toss-path-segment 
-                                           (- (* beat-value (car current-throw)) dwell-value)
-                                           throw-hand catch-hand
-                                           ; throw options alist...
-                                           
-                                           (list 'orientation
-                                                 (let ((orientation 
-                                                        (if (= (floor (/ current-hand 2)) (floor (/ (cadr current-throw) 2))) 
-                                                            'perpendicular ; pass! Paralell to throw line
-                                                            'parallel ; Hand to hand - perpendicular to throw line.
-                                                            )))
-                                                   orientation))
-                                           )
-                                          throw-list))))))))))
+                            (append (build-segments current-hand current-throw) throw-list) first-hand)))))))
     
     (make-pattern
      ; Do something uncomplicated with the results of this horrible recursion...
      (map
       (lambda (o)
-        (match o ((list delay _ first-throw throw-lst)
-                  (let ((start-hand (list-ref hands-lst (cadr first-throw))))
+        (match o ((list delay _ first-throw throw-lst first-hand )
+                  (let ((start-hand (list-ref hands-lst first-hand)))
                      (make-path-state 0 (cons ; Initial dwell hold runs for the whole delay, which could be very slow and hilariously trippy in some cases.
                                          ; These dwell holds are in the wrong hand, they're in the destination hand...
                                          ; I didn't save the starting hand >_<
@@ -179,7 +146,7 @@
         (let loop-throws ((time 0)
                           (unfinished-objects number-of-objects)
                           (c-pattern c-pattern)
-                          (objects (make-list number-of-objects (list '- '* '* '())))
+                          (objects (make-list number-of-objects (list '- '* '* '() '-)))
                           (throws-this-beat (car c-pattern))
                           (hand 0))              
           (cond ((= unfinished-objects 0) ; Done: Return objects, which includes initial delay and throw lists
@@ -238,18 +205,19 @@
   
   (define (advance-beat objects)
     (map 
-     (lambda (o) (match o ((list delay next-throw last-throw throw-list)
+     (lambda (o) (match o ((list delay next-throw last-throw throw-list first-hand)
                            (list 
                             delay
                             (if (list? next-throw) (list (sub1 (car next-throw)) (cadr next-throw)) next-throw)
                             last-throw
-                            throw-list))))                     
+                            throw-list
+                            first-hand))))                     
      objects))                     
   
   (define (match-throw objects pattern-hand)
     (filter
      (lambda (o) (match o 
-                   ((list _ (list countdown object-hand)  _ _)
+                   ((list _ (list countdown object-hand)  _ _ _)
                     (and (= countdown 0) (= pattern-hand object-hand)))
                    (_ #f)))
      objects))
@@ -257,7 +225,7 @@
   
   (define (match-waiting objects)
     (filter
-     (lambda (o) (match o ((list _ '* _ _) #t) (_ #f)))
+     (lambda (o) (match o ((list _ '* _ _ _) #t) (_ #f)))
      objects))
   
   

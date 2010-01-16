@@ -117,8 +117,6 @@
                     (mz (+ (/ (+ z2 catch-offset) tf) (/ (- (+ z1 throw-offset)) tf) (* 9.8 tf)))
                     (bz (+ z1 throw-offset))
                     
-                    ; A demo to start getting club rotation working...
-                    
                     (y-rot
                             (if (assoc 'orientation options)
                                 (if (eq? 'parallel (cadr (assoc 'orientation options)))
@@ -174,7 +172,7 @@
                                           (if (assoc 'orientation options)
                                               (if (eq? 'parallel (cadr (assoc 'orientation options)))
                                                   150 ; assume this is a pass for  now
-                                                  ; 150 = 60 initial overspin (above) plus 90 degrees to get upright
+                                                  ; 150 = 60 initial underspin (above) plus 90 degrees to get upright
                                                   10 ; and this is a self
                                                   )
                                               10)  
