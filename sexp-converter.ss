@@ -75,7 +75,8 @@
              (let
                        ((throw-hand (list-ref hands-lst current-hand))
                         (catch-hand (list-ref hands-lst (cadr current-throw))))
-                     (cond ((and (= (car current-throw) 2 #;(length (car sexp-pattern))) ; Long dwell on at least SOME 2s. Will still look a bit funky.
+               (cond ((and (= (car current-throw) 2 #;(length (car sexp-pattern))) ; Long dwell on at least SOME 2s. Will still look a bit funky.
+                               
                                  (= current-hand (cadr current-throw))) 
                             (begin 
                               (list (dwell-hold-path-segment (* beat-value (car current-throw)) throw-hand))))

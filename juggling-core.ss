@@ -39,8 +39,6 @@
      facing) ; radians - way the hand points when held vaguely straight out from the body, so that there's a 100 to 150-odd degree arc of possible throws
     #:transparent)
   
-
-  
   (define (rotate p angle)
     (match-let (((struct position (x y z)) p))
       (make-position
@@ -65,11 +63,6 @@
            (match-let (((struct hand (p1 p2 a)) h))           
              (make-hand (translate p1 x y z) (translate p2 x y z) a))) hands))
 
-     
-  ; what? really? I'm skeptical.
-  ; they maybe ought to have names or something?
-  
-  
   ;At a higher level, these might be represented abstract to allow speeding up and slowing down the pattern. (Slowing and speeding time itself should still be possible during arcs.)
   
   ; Unit is assumed to be the meter, time is seconds, gravity pulls along z.
@@ -92,8 +85,7 @@
                   (cond ((< tf 1.1) 1)
                         ((< tf 1.6) 2)
                         ((< tf 2.1) 3)
-                        (#t 4))
-                         )
+                        (#t 4)))
                  
                  ; raise the catch point a bit for passes...
                  (catch-offset (match (option options 'orientation)
@@ -143,7 +135,6 @@
                                          ('parallel 60)
                                          ('perpendicular 0)
                                          ('default 0))
-                                       
                                        ; The actual spin as the club moves along.
                                        
                                        (- (* t (/ 
@@ -170,10 +161,6 @@
                  ((and (positive? y)) (+ 180 a-deg))
                  ((and (positive? x)) (+ 360 a-deg))
                  (#t (+ 180 a-deg)))))))
-  
-  ;(define (check-angle a)
-  ;  (let ((a-deg (/ a 57.2957795)))
-  ;    (list (cos a-deg) (sin a-deg) (get-angle (cos a-deg) (sin a-deg)))))  
   
   ; Ignoring dwell holds that are largely travelling vertically for the moment, 
   ; dwell holds are basically moving from (x1, y1, c) to (x2, y2, c) and we want
@@ -228,7 +215,13 @@
                       (+ (* mz t) bz))
                      
                      (make-rotation -90 y-rot -90)
-                     (make-rotation 0 0 0)))))))))))
+                     (make-rotation 0 0 
+                                    (match (option options 'orientation)
+                                      ; Get from upright to 10 degrees below
+                                      ('parallel (+ -90 (* t (/ 100 tf))))
+                                      ('perpendicular (+ -10 (* t (/ 10 tf))))
+                                      ('default (+ -10 (* t (/ 10 tf)))))
+                                    )))))))))))
   
   ; Advance a path-state by t-tick
   (define (advance-path-state! ps t-tick)
@@ -271,40 +264,4 @@
    
    rotate translate
    rotate-hands translate-hands
-   )
-  
-  #;(begin
-      ; Sample crap
-      ; Duplicated in juggling-test.ss
-      (define ex-p1 (make-position 0 0 0))
-      (define ex-p2 (make-position 1 0 0))
-      
-      (define toss-seg (ball-toss-path-segment 1 ex-p1 ex-p2))
-      (define hold-seg (dwell-hold-path-segment 1 ex-p2 ex-p1))
-      
-      (define 1-fountain-state (make-path-state 0 (circular-list toss-seg hold-seg)))
-      
-      (define fs (struct-copy path-state 1-fountain-state))
-      
-      (define 1-ball-fountain (make-pattern (list 1-fountain-state)))
-      
-      ; Sample 2H siteswap positions
-      (define ex-left-throw (make-position -0.2 0 0))
-      (define ex-left-catch (make-position -0.4 0 0))
-      (define ex-right-throw (make-position 0.2 0 0))
-      (define ex-right-catch (make-position 0.4 0 0))
-      
-      ; 3-ball cascade path
-      (define lh-toss (ball-toss-path-segment 2 ex-left-throw ex-right-catch))
-      (define rh-toss (ball-toss-path-segment 2 ex-right-throw ex-left-catch))
-      (define lh-dwell (dwell-hold-path-segment 1 ex-left-catch ex-left-throw))
-      (define rh-dwell (dwell-hold-path-segment 1 ex-right-catch ex-right-throw))
-      
-      (define 3-cascade-state-1 (make-path-state 0 (circular-list rh-toss lh-dwell lh-toss rh-dwell)))
-      (define 3-cascade-state-2 (make-path-state 0 (circular-list lh-dwell lh-toss rh-dwell rh-toss)))
-      (define 3-cascade-state-3 (make-path-state 1 (circular-list lh-toss rh-dwell rh-toss lh-dwell)))
-      
-      (define 3-ball-cacade (make-pattern (list 3-cascade-state-1 3-cascade-state-2 3-cascade-state-3))))
-  
-  )
-
+   ))
