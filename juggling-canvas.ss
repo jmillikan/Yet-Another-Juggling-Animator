@@ -234,7 +234,16 @@
             'flagrant-error))
       
       (define/public (set-jugglers j)
-            (set! jugglers (jugglers-lambda j)))
+        (set! jugglers (jugglers-lambda j))
+        (with-gl-context
+         (lambda ()
+           (set! jugglers-static (gl-gen-lists 1))
+           (gl-new-list jugglers-static 'compile)          
+           ((jugglers-lambda j))
+           (gl-end-list))))
+        
+      
+      (define jugglers-static #f)
       
       (define/override (on-paint)
         (when internal-pattern
@@ -283,8 +292,12 @@
                     (gl-pop-matrix))))
               internal-pattern colors)
              
-             (if (procedure? jugglers) 
+             #;(if (procedure? jugglers) 
                    (jugglers) '())
+             
+             (if jugglers-static
+                 (gl-call-list jugglers-static)
+                 #f)
              
              ; Show a nice grid (size determined by 2 x grid-size, each square is grid-unit across.)
              (gl-material-v 'front-and-back
