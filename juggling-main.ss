@@ -51,8 +51,7 @@
           
           (delete-child current-form)
           (add-child new-form)
-          (set! current-form new-form)
-          ))
+          (set! current-form new-form)))
       
       (define siteswap-form
         (instantiate siteswap-form% (this)))
@@ -97,7 +96,6 @@
                                   (hands-lambda))))))
         (stretchable-width #f))))
 
-  
   (define siteswap-form% 
     (class* vertical-panel% ()
       (init-field parent)
@@ -107,8 +105,7 @@
       (instantiate pattern-line% ("4-hand SS" "0.15" "0.13" "966" 4hss->sexp 
                                               (λ _ (juggler-circle 2 3.0)) w 4-hand-examples this))
       (instantiate pattern-line% ("Synchronous" "0.25" "0.20" "(6x,4)*" sync-ss->sexp 
-                                                (λ _ (juggler-circle 2 3.0)) w syncss-examples this))
-))
+                                                (λ _ (juggler-circle 2 3.0)) w syncss-examples this))))
   
   ; For now, the stuff in the evals can see/do everything
   (define-namespace-anchor nsa)  

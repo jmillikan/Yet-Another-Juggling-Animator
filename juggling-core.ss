@@ -82,10 +82,12 @@
                  (a1-deg (radians->degrees a1))
                  (a2-deg (radians->degrees a2))
                  (spins
-                  (cond ((< tf 1.1) 1)
-                        ((< tf 1.6) 2)
-                        ((< tf 2.1) 3)
-                        (#t 4)))
+                  (cond 
+                    ((< tf 0.4) 0)
+                    ((< tf 1.1) 1)
+                    ((< tf 1.6) 2)
+                    ((< tf 2.1) 3)
+                    (#t 4)))
                  
                  ; raise the catch point a bit for passes...
                  (catch-offset (match (option options 'orientation)
