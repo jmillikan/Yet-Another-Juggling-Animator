@@ -115,8 +115,19 @@
                                 (map convert-sync-throw beat (iota (length beat)))
                                 '()))
                              sexp-no-commas)))))
+  
+  (define (passing-ss-throw-parts s)
+    (let* ((matches (regexp-match #px"^([0-9\\.]+)((?:p[0-9]?)?)(x?)" s))
+           (height (string->number (list-ref matches 1)))
+           (pass-matches (regexp-match #px"(p)((?:[0-9]+)?)" (list-ref matches 2)))
+           (pass? (if pass-matches #t #f))
+           (destination (match pass-matches 
+                          ((list _ _ (regexp #px"[0-9]+")) (string->number (list-ref pass-matches 2)))
+                          (_ 'no-destination)))           
+           (crossing? (regexp-match #px"x" (list-ref matches 3))))
+      (list height pass? destination crossing?)))
     
-  ; Translate a sync throw
+    ; Translate a sync throw
   ; <throw height><crossing><pass/pass destination>
   ; to a sexp throw (list <height> <hand>)
   (define (convert-sync-throw throw hand)
@@ -140,6 +151,16 @@
                                     (add1 reciever-same-hand)
                                     (sub1 reciever-same-hand))
                       reciever-same-hand))))))
+ 
+  
+ 
+  (define (passing-ss->sexp passing-ss)
+    (let ((juggler-parts
+           (map (λ (juggler-part)
+                  (map passing-ss-throw-parts (regexp-split #px"\\s+" juggler-part))) 
+                (regexp-split #px"\\s*\\|\\s*" 
+                              (cadr (regexp-match #px"^\\s*<\\s*(.*)\\s*>\\s*$" passing-ss))))))
+      juggler-parts))
                        
     
                 
