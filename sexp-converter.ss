@@ -79,7 +79,8 @@
                                
                                  (= current-hand (cadr current-throw))) 
                             (begin 
-                              (list (dwell-hold-path-segment (* beat-value (car current-throw)) throw-hand))))
+                              (list (dwell-hold-path-segment (* beat-value (car current-throw)) throw-hand throw-hand
+                                                             (list 'hold #t)))))
                            (#t
                             (let ((orientation 
                                    (if (= (floor (/ current-hand 2)) (floor (/ (cadr current-throw) 2))) 
@@ -88,7 +89,7 @@
                                        )))
                               (list
                                ; 1st dwell segment comes right after...
-                               (dwell-hold-path-segment dwell-value catch-hand
+                               (dwell-hold-path-segment dwell-value catch-hand throw-hand
                                                         (list 'orientation
                                      
                                       orientation))
@@ -134,7 +135,7 @@
                      (make-path-state 0 (cons ; Initial dwell hold runs for the whole delay, which could be very slow and hilariously trippy in some cases.
                                          ; These dwell holds are in the wrong hand, they're in the destination hand...
                                          ; I didn't save the starting hand >_<
-                                         (dwell-hold-path-segment (* delay beat-value) start-hand)
+                                         (dwell-hold-path-segment (* delay beat-value) start-hand start-hand)
                                          (apply circular-list (reverse throw-lst))))))))
       ; horrible recursion...
       (let* ((c-pattern (apply circular-list sexp-pattern))

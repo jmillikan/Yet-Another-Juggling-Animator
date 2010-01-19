@@ -191,7 +191,7 @@
         (set! club-model (gl-gen-lists 1))
         (gl-new-list club-model 'compile)
         (gl-rotate -90 1.0 0 0)
-        (gl-translate 0 0 -0.3)
+        (gl-translate 0 0 -0.35)
         (gl-sphere quadric 0.045 5 5)
         (gl-cylinder quadric 0.025 0.04 0.2 10 1)
         (gl-translate 0 0 0.2)
@@ -219,9 +219,7 @@
            ))
       
       (define ball-model #f)
-      
       (define ring-model #f)
-          
       (define club-model #f)
       
       (define/public (set-pattern p)
@@ -291,9 +289,6 @@
                     (gl-normal 0 0 1)
                     (gl-pop-matrix))))
               internal-pattern colors)
-             
-             #;(if (procedure? jugglers) 
-                   (jugglers) '())
              
              (if jugglers-static
                  (gl-call-list jugglers-static)

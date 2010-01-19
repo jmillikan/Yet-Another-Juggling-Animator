@@ -75,29 +75,65 @@
         (cadr (assoc name options))
         'default))
   
-  ; Todo: Fix rotation for clubs^Wrings
+  ; In degrees >_<
+  (define (angle-diff a1 a2)
+    (min
+     (abs (- a1 a2))
+     (abs (- (+ 360 (min a1 a2)) (max a1 a2)))))
+  
+  ; Todo: Fix rotation for clubs^Wrings^Wclub backdrops
   (define (ball-toss-path-segment tf h1 h2 . options)
-    (match-let* (((struct hand (p1 _ a1)) h1)
-                 ((struct hand (_ p2 a2)) h2)
+    (match-let* (((struct hand ((struct position (x1 y1 z1)) _ a1)) h1)
+                 ((struct hand (_ (struct position (x2 y2 z2)) a2)) h2)
                  (a1-deg (radians->degrees a1))
                  (a2-deg (radians->degrees a2))
+                 
+                 (angle-to-dest (get-angle (- x1 x2) (- y1 y2)))
+                 (backwards? (< 100 (angle-diff a1-deg angle-to-dest)))
+                 
+                 ; Ugh, at least now I can change this quickly
+                 (throw-type (match (option options 'orientation)
+                               ('parallel (if backwards? 'backdrop 'pass))
+                               ('perpendicular 'self)
+                               ('default 'unknown)))
+                 
+                 ; These five variables go a little ways toward styling the throw
+                 ; catch and throw offset are z-offsets from the catch and throw point
+                 ; and at least the 'catch' point one should be matched by dwell holds.
+                 
+                 ; initial-rotation allows passes to start low and rotated and
+                 ; extra-rotation gives the club "overspin" to bring it around for passes, etc.
+                 
                  (spins
                   (cond 
-                    ((< tf 0.4) 0)
-                    ((< tf 1.1) 1)
-                    ((< tf 1.6) 2)
-                    ((< tf 2.1) 3)
+                    ((< tf 0.5) 0)
+                    ((< tf 1.0) 1)
+                    ((< tf 1.4) 2)
+                    ((< tf 2.0) 3)
                     (#t 4)))
                  
-                 ; raise the catch point a bit for passes...
-                 (catch-offset (match (option options 'orientation)
-                                 ('parallel 0.8)
-                                 ('perpendicular 0.1)
-                                 ('default 0.0)))
-                 (throw-offset (match (option options 'orientation)
-                                 ('parallel -0.3)
-                                 ('perpendicular -0.1)
-                                 ('default 0.0))))
+                 (orientation
+                  (make-rotation -90 
+                                 (match throw-type
+                                   ('pass angle-to-dest)
+                                   (_ a2-deg))
+                                 -90))
+                 ; raise the catch point a bit for all throws
+                 (catch-offset (match throw-type
+                                 ('pass 0.8)
+                                 (_ 0.1)))
+                                 
+                 (throw-offset (match throw-type
+                                 ('pass -0.3)
+                                 (_ -0.1)))
+                                                   
+                 (initial-rotation (match throw-type
+                                     ('pass 60)
+                                     (_ 0)))
+                 
+                 (extra-rotation (match throw-type
+                                   ('pass 90)
+                                   (_ 10))))
       (make-path-segment 
        tf
        ; Solve for parametric function p(t) with gravity pulling negative on z
@@ -107,9 +143,7 @@
        ; y(t) = (y1/(y2 - tf))t + y1
        ; z(t) = -9t^2 + mz t + z1 where
        ;  mz = (z2/tf) + (-z1/tf) + 9tf  (Not too sure about this one.)
-       (if (= tf 0) (lambda (t) p1)  
-           (match (cons p1 p2)
-             ((cons (struct position (x1 y1 z1)) (struct position (x2 y2 z2)))
+       (if (= tf 0) (lambda _ 'flagrant-error)  ; This shouldn't get executed.
               (let* ((mx (/ (- x2 x1) tf))
                      (bx x1)
                      (my (/ (- y2 y1) tf))
@@ -118,11 +152,7 @@
                      (mz (+ (/ (+ z2 catch-offset) tf) (/ (- (+ z1 throw-offset)) tf) (* 9.8 tf)))
                      (bz (+ z1 throw-offset))
                      
-                     (y-rot
-                      (match (option options 'orientation)
-                        ('parallel (get-angle (- x1 x2) (- y1 y2)))
-                        ('perpendicular a2-deg)
-                        ('default (+ 90 (get-angle (- x1 x2) (- y1 y2)))))))
+                     )
                 (lambda (t)         
                   (values 
                    (make-position 
@@ -131,24 +161,12 @@
                     (+ (* -9.8 t t) (* mz t) bz))
                    
                    ; Ugh. Since I'm bad at math, we need two different rotations here. (One to orient it "straight" and another for the spin.)
-                   (make-rotation -90 y-rot -90)
-                   (make-rotation 0 0 (+
-                                       (match (option options 'orientation)
-                                         ('parallel 60)
-                                         ('perpendicular 0)
-                                         ('default 0))
+                   orientation
+                   (make-rotation 0 0 (+ initial-rotation
                                        ; The actual spin as the club moves along.
                                        
-                                       (- (* t (/ 
-                                                (+ 
-                                                 ; This branch adds the "extra" spin that brings passes perpendicular
-                                                 ; to the ground
-                                                 (match (option options 'orientation)
-                                                   ('parallel 150) ; 90 degrees from ground + 60 offset from above
-                                                   ('perpendicular 10)
-                                                   ('default 10))  
-                                                 (* spins 360)) 
-                                             tf))))))))))))))
+                                       (* -1 t 
+                                          (/ (+ initial-rotation extra-rotation (* spins 360)) tf)))))))))))
     
   (define (radians->degrees a)
     (* 57.2957795 a))
@@ -177,9 +195,26 @@
   
   ; Options are an alist, I guess  
   
-  (define (dwell-hold-path-segment tf h1 . options)
-    (match-let* (((struct hand (p2 p1 a1)) h1)
-                 (a1-deg (radians->degrees a1)))
+  (define (dwell-hold-path-segment tf h1 h-throw . options)
+    (match-let* (((struct hand ((struct position (x2 y2 z2)) 
+                                (struct position (x1 y1 z1)) 
+                                a1)) h1)
+                 ((struct hand ((struct position (x-throw y-throw _)) _ a2)) h-throw)
+                 (a1-deg (radians->degrees a1))
+                 (a2-deg (radians->degrees a2))
+                 
+                 (angle-to-dest (get-angle (- x-throw x1) (- y-throw y1)))
+                 
+                 (backwards? (< 100 (angle-diff a2-deg angle-to-dest)))
+                 
+                 ; Ugh, at least now I can change this quickly
+                 (throw-type (match (option options 'orientation)
+                               ('parallel (if backwards? 'backdrop 'pass))
+                               ('perpendicular 'self)
+                               ('default 'unknown)))
+                 (catch-rotation (match throw-type
+                                   ('pass 90)
+                                   (_ 10))))
       (make-path-segment
        tf
        ; On this one... I'm just going to go linearly for now.
@@ -188,43 +223,34 @@
        ; y(t) = (y1/(y2 - tf))t + y1
        ; z(t) = (z1/(z2 - tf))t + z1
        
-       (if (= tf 0) (lambda args p1) ; Special case for tf = 0, which causes murder later.
+       (if (= tf 0) (λ _ 'flagrant-error) ; Special case for tf = 0, which causes murder later.
            (begin 
-             (match (cons p1 p2) 
-               
-               ((cons (struct position (x1 y1 z1)) (struct position (x2 y2 z2)))
-                (let* (
-                       (catch-offset (match (option options 'orientation)
-                                       ('parallel 0.8)
-                                       ('perpendicular 0.1)
-                                       ('default 0.0)))
-                       (mx (/ (- x2 x1) tf))
-                       (bx x1)
-                       (my (/ (- y2 y1) tf))
-                       (by y1)
-                       (mz (/ (- z2 (+ z1 catch-offset)) tf))
-                       (bz (+ z1 catch-offset))
-                       
-                       (y-rot a1-deg #;(match (option options 'orientation)
-                                ('parallel (get-angle (- x1 x2) (- y1 y2)))
-                                ('perpendicular a1-deg)
-                                ('default a1-deg))))                           
-                  (lambda (t)        
-                    (values
-                     (make-position 
-                      (+ (* mx t) bx)
-                      (+ (* my t) by)
-                      (+ (* mz t) bz))
-                     
-                     (make-rotation -90 y-rot -90)
-                     (make-rotation 0 0 
-                                    (match (option options 'orientation)
-                                      ; Get from upright to 10 degrees below
-                                      ('parallel (+ -90 (* t (/ 100 tf))))
-                                      ('perpendicular (+ -10 (* t (/ 10 tf))))
-                                      ('default (+ -10 (* t (/ 10 tf)))))
-                                    )))))))))))
-  
+             (let* (
+                    ; raise the catch point a bit for all throws
+                    (catch-offset (match throw-type
+                                    ('pass 0.8)
+                                    (_ 0.1)))
+                    (mx (/ (- x2 x1) tf))
+                    (bx x1)
+                    (my (/ (- y2 y1) tf))
+                    (by y1)
+                    (mz (/ (- z2 (+ z1 catch-offset)) tf))
+                    (bz (+ z1 catch-offset))
+                    
+                    (y-rot a1-deg))                           
+               (λ (t)        
+                 (values
+                  (make-position 
+                   (+ (* mx t) bx)
+                   (+ (* my t) by)
+                   (+ (* mz t) bz))
+                  
+                  (make-rotation -90 y-rot -90)
+                  (make-rotation 0 0 
+                                 (+ (- catch-rotation) (* t (/ (+ catch-rotation 10) tf))))))
+                                 ))))))
+
+
   ; Advance a path-state by t-tick
   (define (advance-path-state! ps t-tick)
     ; Bluh. Starting to wish I'd done this a simpler way.
