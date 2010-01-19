@@ -240,7 +240,6 @@
            ((jugglers-lambda j))
            (gl-end-list))))
         
-      
       (define jugglers-static #f)
       
       (define/override (on-paint)
@@ -366,9 +365,7 @@
                      (gl-begin 'lines)
                      (gl-vertex x1 y1 (- z1 1.0))
                      (gl-vertex (+ x1 ax) (+ ay y1) (- z1 1.0))
-                     (gl-end)))
-                                
-                            )))
+                     (gl-end))))))
            
            hands-lst)))
       

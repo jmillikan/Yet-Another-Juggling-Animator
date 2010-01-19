@@ -1,11 +1,10 @@
 (module juggling-core scheme
   
   (require srfi/1)
-  ; The first goal here is to get basic ball patterns animating ASAP. This means skipping interpreters for high-level languages (MHN, beatmap, Causals... JuggleML... Seems like there's one I'm not thinking of. It probably isn't too important.)
   
   ; Details for how to animate hands and figures might come later. Allowances are made in the granularity of the data.
   
-  ; Innermost stored representation of a single part of a ball path, e.g. the air segment of a toss, the hand motion to a throw, etc. - [0, t] is the domain for a parametric function giving position x,y,z (and potentially rotation in the future).
+  ; Innermost stored representation of a single part of a ball path, e.g. the air segment of a toss, the hand motion to a throw, etc. - [0, t] is the domain for a parametric function giving position x,y,z and two rotations that are applied in order r1x r1y r1z r2x r2y r2z because I'm bad at math.
   ; This "should" allow floor bounces, wall bounces, items with different drags... 
   
   (define-struct position
@@ -77,9 +76,8 @@
   
   ; In degrees >_<
   (define (angle-diff a1 a2)
-    (min
-     (abs (- a1 a2))
-     (abs (- (+ 360 (min a1 a2)) (max a1 a2)))))
+    (min (abs (- a1 a2))
+         (abs (- (+ 360 (min a1 a2)) (max a1 a2)))))
   
   ; Todo: Fix rotation for clubs^Wrings^Wclub backdrops
   (define (ball-toss-path-segment tf h1 h2 . options)
@@ -122,15 +120,12 @@
                  (catch-offset (match throw-type
                                  ('pass 0.8)
                                  (_ 0.1)))
-                                 
                  (throw-offset (match throw-type
                                  ('pass -0.3)
-                                 (_ -0.1)))
-                                                   
+                                 (_ -0.1)))       
                  (initial-rotation (match throw-type
                                      ('pass 60)
                                      (_ 0)))
-                 
                  (extra-rotation (match throw-type
                                    ('pass 90)
                                    (_ 10))))
@@ -143,17 +138,14 @@
        ; y(t) = (y1/(y2 - tf))t + y1
        ; z(t) = -9t^2 + mz t + z1 where
        ;  mz = (z2/tf) + (-z1/tf) + 9tf  (Not too sure about this one.)
-       (if (= tf 0) (lambda _ 'flagrant-error)  ; This shouldn't get executed.
+       (if (= tf 0) (λ _ 'flagrant-error)  ; This shouldn't get executed.
               (let* ((mx (/ (- x2 x1) tf))
                      (bx x1)
                      (my (/ (- y2 y1) tf))
                      (by y1)
-                    
                      (mz (+ (/ (+ z2 catch-offset) tf) (/ (- (+ z1 throw-offset)) tf) (* 9.8 tf)))
-                     (bz (+ z1 throw-offset))
-                     
-                     )
-                (lambda (t)         
+                     (bz (+ z1 throw-offset)))
+                (λ (t)         
                   (values 
                    (make-position 
                     (+ (* mx t) bx)
@@ -164,19 +156,16 @@
                    orientation
                    (make-rotation 0 0 (+ initial-rotation
                                        ; The actual spin as the club moves along.
-                                       
                                        (* -1 t 
                                           (/ (+ initial-rotation extra-rotation (* spins 360)) tf)))))))))))
     
-  (define (radians->degrees a)
-    (* 57.2957795 a))
+  (define (radians->degrees a) (* 57.2957795 a))
   ; Ugh, don't ask. My geometry is bad.
   (define (get-angle x y)
     (- 180 ; It's not just about living forever, Jackie. The trick is living with yourself forever.
      (if (zero? x) 0 ; doesn't matter, I think
-         (let*         
-             ((a (atan (/ y x)))
-              (a-deg (* 57.2957795 a)))
+         (let* ((a (atan (/ y x)))
+                (a-deg (* 57.2957795 a)))
            (cond ((and (positive? x) (positive? y)) a-deg)
                  ((and (positive? y)) (+ 180 a-deg))
                  ((and (positive? x)) (+ 360 a-deg))
@@ -202,9 +191,7 @@
                  ((struct hand ((struct position (x-throw y-throw _)) _ a2)) h-throw)
                  (a1-deg (radians->degrees a1))
                  (a2-deg (radians->degrees a2))
-                 
-                 (angle-to-dest (get-angle (- x-throw x1) (- y-throw y1)))
-                 
+                 (angle-to-dest (get-angle (- x-throw x1) (- y-throw y1)))                 
                  (backwards? (< 100 (angle-diff a2-deg angle-to-dest)))
                  
                  ; Ugh, at least now I can change this quickly
@@ -214,7 +201,11 @@
                                ('default 'unknown)))
                  (catch-rotation (match throw-type
                                    ('pass 90)
-                                   (_ 10))))
+                                   (_ 10)))
+                 ; raise the catch point a bit for all throws
+                 (catch-offset (match throw-type
+                                 ('pass 0.8)
+                                 (_ 0.1))))
       (make-path-segment
        tf
        ; On this one... I'm just going to go linearly for now.
@@ -225,12 +216,7 @@
        
        (if (= tf 0) (λ _ 'flagrant-error) ; Special case for tf = 0, which causes murder later.
            (begin 
-             (let* (
-                    ; raise the catch point a bit for all throws
-                    (catch-offset (match throw-type
-                                    ('pass 0.8)
-                                    (_ 0.1)))
-                    (mx (/ (- x2 x1) tf))
+             (let* ((mx (/ (- x2 x1) tf))
                     (bx x1)
                     (my (/ (- y2 y1) tf))
                     (by y1)
@@ -249,7 +235,6 @@
                   (make-rotation 0 0 
                                  (+ (- catch-rotation) (* t (/ (+ catch-rotation 10) tf))))))
                                  ))))))
-
 
   ; Advance a path-state by t-tick
   (define (advance-path-state! ps t-tick)
@@ -291,5 +276,4 @@
    advance-path-state! advance-pattern! map-pattern
    
    rotate translate
-   rotate-hands translate-hands
-   ))
+   rotate-hands translate-hands))

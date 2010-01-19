@@ -146,5 +146,4 @@
           (stretchable-width #f)))))
   
   (set! w (make-object main-window))
-  (send w show #t)
-  )
+  (send w show #t))

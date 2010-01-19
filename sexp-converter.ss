@@ -3,8 +3,7 @@
   (require "juggling-core.ss")
   
   (provide 
-   sexp->pattern
-   )
+   sexp->pattern)
   
   ; (list '- '* '* '() '-)
   ; (delay next-throw last-throw throw-list-backwards first-hand)
@@ -14,12 +13,6 @@
       ((null? list) '())
       ((equal? (car list) elem) (cons new-elem list))
       (#t (cons (car list) (replace-item (cdr list) elem new-elem)))))                  
-  
-  ; UUUUUUGH, TODO: LAST THROW MUST MATCH HAND THROWN FROM. ID WON'T WORK.
-  ; This function *did* get to long... Let's see, what can I exorcise to somewhere else?
-  
-  ; dwell-value =< beat-value
-  ; (length hands-lst) >= all (length (car sexp-pattern)), etc.
   
   (define (has? lst-or-atom mem)
     (or (equal? lst-or-atom mem)
@@ -39,8 +32,7 @@
   
   ; Double up the pattern with all throws in and going to opposite hands - hand n + 1 % 2 in multi-hand setups
   ; This may result in flagrant errors if there are an odd number of manipulators.
-  (define (star-pattern p)
-    (map star-beat p))
+  (define (star-pattern p) (map star-beat p))
   
   (define (star-beat b)
     (match b ((list-rest right-throw left-throw rest)
@@ -75,8 +67,7 @@
              (let
                        ((throw-hand (list-ref hands-lst current-hand))
                         (catch-hand (list-ref hands-lst (cadr current-throw))))
-               (cond ((and (= (car current-throw) 2 #;(length (car sexp-pattern))) ; Long dwell on at least SOME 2s. Will still look a bit funky.
-                               
+               (cond ((and (= (car current-throw) 2) ; Long dwell on at least SOME 2s. Will still look a bit funky.
                                  (= current-hand (cadr current-throw))) 
                             (begin 
                               (list (dwell-hold-path-segment (* beat-value (car current-throw)) throw-hand throw-hand
@@ -85,14 +76,11 @@
                             (let ((orientation 
                                    (if (= (floor (/ current-hand 2)) (floor (/ (cadr current-throw) 2))) 
                                        'perpendicular ; pass! Paralell to throw line
-                                       'parallel ; Hand to hand - perpendicular to throw line.
-                                       )))
+                                       'parallel))) ; Hand to hand - perpendicular to throw line.
                               (list
                                ; 1st dwell segment comes right after...
                                (dwell-hold-path-segment dwell-value catch-hand throw-hand
-                                                        (list 'orientation
-                                     
-                                      orientation))
+                                                        (list 'orientation orientation))
                                ; 1st toss segment
                                (ball-toss-path-segment 
                                 (- (* beat-value (car current-throw)) dwell-value) 
@@ -108,8 +96,7 @@
                    current-throw ; next-throw, counted down
                    current-throw ; last throw, tested with eq? for identity
                    (build-segments current-hand current-throw)
-                   current-hand ; first hand, for use later
-                   )))
+                   current-hand))) ; first hand, for use later
         (values #f (replace eq? objects starting-object new-object))))    
     
     (define (update-object objects object-matching-throw current-throw time current-hand)
@@ -129,7 +116,7 @@
     (make-pattern
      ; Do something uncomplicated with the results of this horrible recursion...
      (map
-      (lambda (o)
+      (λ (o)
         (match o ((list delay _ first-throw throw-lst first-hand )
                   (let ((start-hand (list-ref hands-lst first-hand)))
                      (make-path-state 0 (cons ; Initial dwell hold runs for the whole delay, which could be very slow and hilariously trippy in some cases.
@@ -141,7 +128,6 @@
       (let* ((c-pattern (apply circular-list sexp-pattern))
              (number-of-hands (length (car c-pattern)))
              (number-of-objects (ss-value sexp-pattern)))
-        
         (let loop-throws ((time 0)
                           (unfinished-objects number-of-objects)
                           (c-pattern c-pattern)
@@ -174,7 +160,8 @@
                                   (let-values ((( finished updated-objects) 
                                                 (start-object objects (car unstarted-objects) current-throw time hand)))
                                     (loop-throws time 
-                                                 (if finished (sub1 unfinished-objects) unfinished-objects)                                                                     c-pattern 
+                                                 (if finished (sub1 unfinished-objects) unfinished-objects) 
+                                                 c-pattern 
                                                  updated-objects
                                                  (cdr throws-this-beat) 
                                                  (add1 hand))))
@@ -203,13 +190,9 @@
   
   (define (advance-beat objects)
     (map 
-     (lambda (o) (match o ((list delay next-throw last-throw throw-list first-hand)
-                           (list 
-                            delay
-                            (if (list? next-throw) (list (sub1 (car next-throw)) (cadr next-throw)) next-throw)
-                            last-throw
-                            throw-list
-                            first-hand))))                     
+     (λ (o) (match o ((list delay (list countdown dest) last-throw throw-list first-hand)
+                      (list delay (list (sub1 countdown) dest) last-throw throw-list first-hand))
+              (_ o)))                     
      objects))                     
   
   (define (match-throw objects pattern-hand)
@@ -233,12 +216,3 @@
       ((null? list) '())
       ((pred old-elem (car lst)) (cons new-elem (cdr lst)))
       (#t (cons (car lst) (replace pred (cdr lst) old-elem new-elem))))))
-
-
-
-
-
-
-
-
-
