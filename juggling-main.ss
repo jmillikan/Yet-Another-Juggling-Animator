@@ -71,6 +71,7 @@
       (init-field initial-dwell)
       (init-field initial-pattern)
       (init-field pattern-lambda) ; string -> sexp
+      (init-field hold-beats)
       (init-field hands-lambda) ; thunk -> hands
       (init-field juggling-window) ; show juggling-window show-pattern...
       (init-field examples-list) ; for input combo
@@ -78,9 +79,12 @@
       
       (super-instantiate (parent) (alignment '(center center)) (stretchable-width #t))
       
-      (define input-pattern (instantiate combo-field% (name examples-list this) (min-width 250) (init-value initial-pattern) (stretchable-width #t)))
-      (define input-beat (instantiate text-field% ("" this) (init-value  initial-beat) (min-width 60) (stretchable-width #f)))
-      (define input-dwell (instantiate text-field% ("" this) (init-value  initial-dwell) (min-width 60) (stretchable-width #f)))
+      (define input-pattern (instantiate combo-field% (name examples-list this) (min-width 250) 
+                              (init-value initial-pattern) (stretchable-width #t)))
+      (define input-beat (instantiate text-field% ("" this) 
+                           (init-value  initial-beat) (min-width 60) (stretchable-width #f)))
+      (define input-dwell (instantiate text-field% ("" this) 
+                            (init-value  initial-dwell) (min-width 60) (stretchable-width #f)))
       
       (instantiate button% 
         ("Run" this (λ _ 
@@ -89,7 +93,7 @@
                             ((beat-value (string->number (send input-beat get-value)))
                              (dwell-value (string->number (send input-dwell get-value)))
                              (sexp-pattern (pattern-lambda (send input-pattern get-value)))
-                             (pattern (sexp->pattern sexp-pattern beat-value dwell-value (hands-lambda))))
+                             (pattern (sexp->pattern sexp-pattern beat-value dwell-value (hands-lambda) hold-beats)))
                           (send w show-pattern
                                 pattern
                                 (hands-lambda))))))
@@ -99,11 +103,11 @@
     (class* vertical-panel% ()
       (init-field parent)
       (super-instantiate (parent) (alignment '(center center)) (stretchable-height #f))
-      (instantiate pattern-line% ("Siteswap" "0.25" "0.16" "744" 2hss->sexp 
+      (instantiate pattern-line% ("Siteswap" "0.25" "0.16" "744" 2hss->sexp 2 
                                              (λ _ pair-of-hands) w 2-ss-examples this))
-      (instantiate pattern-line% ("4-hand SS" "0.15" "0.13" "966" 4hss->sexp 
+      (instantiate pattern-line% ("4-hand SS" "0.15" "0.13" "966" 4hss->sexp 4 
                                               (λ _ (juggler-circle 2 3.0)) w 4-hand-examples this))
-      (instantiate pattern-line% ("Synchronous" "0.25" "0.20" "(6x,4)*" sync-ss->sexp 
+      (instantiate pattern-line% ("Synchronous" "0.25" "0.20" "(6x,4)*" sync-ss->sexp 2 
                                                 (λ _ (juggler-circle 2 3.0)) w syncss-examples this))))
   
   ; For now, the stuff in the evals can see/do everything
@@ -120,9 +124,9 @@
         (eval (call-with-input-string (send hands-select get-value) read) eval-namespace))
       
       (instantiate pattern-line% ("Scheme List" "0.25" "0.2" "" 
-                                                (λ (s) (eval (call-with-input-string s read) eval-namespace))
+                                                (λ (s) (eval (call-with-input-string s read) eval-namespace)) 2
                                                 get-hands w sexp-examples this))
-      (instantiate pattern-line% ("6-hand SS" "0.10" "0.08" "a" 6hss->sexp get-hands w 6-ss-examples this))))
+      (instantiate pattern-line% ("6-hand SS" "0.10" "0.08" "a" 6hss->sexp 6 get-hands w 6-ss-examples this))))
   
   (define (instantiate-view-controls c h)
     (let ((v (instantiate vertical-panel% (h) (alignment '(center center)) (stretchable-width #f) (min-width 200))))

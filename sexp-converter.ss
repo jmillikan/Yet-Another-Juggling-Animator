@@ -19,7 +19,7 @@
         (and (list? lst-or-atom)
              (member mem lst-or-atom))))
   
-  (define (sexp->pattern sexp-pattern beat-value dwell-value hands-lst)   
+  (define (sexp->pattern sexp-pattern beat-value dwell-value hands-lst hold-beats)   
     (sexp->pattern-internal 
      (cond ((has? (car sexp-pattern) '*)
             (append (cdr sexp-pattern) (star-pattern (cdr sexp-pattern))))              
@@ -28,7 +28,7 @@
            ((has? (car sexp-pattern) '***) ; "This is incredibly serious business."
             (append (cdr sexp-pattern) (star-pattern (twostar-pattern (cdr sexp-pattern)))))
            (#t sexp-pattern))
-     beat-value dwell-value hands-lst))          
+     beat-value dwell-value hands-lst hold-beats))          
   
   ; Double up the pattern with all throws in and going to opposite hands - hand n + 1 % 2 in multi-hand setups
   ; This may result in flagrant errors if there are an odd number of manipulators.
@@ -62,13 +62,13 @@
                             (+ (remainder (+ hand 2) 4) (floor (/ hand 4))) rest)))
       (three-or-less-hands three-or-less-hands)))
   
-  (define (sexp->pattern-internal sexp-pattern beat-value dwell-value hands-lst)    
+  (define (sexp->pattern-internal sexp-pattern beat-value dwell-value hands-lst hold-beats)    
     (define (build-segments current-hand current-throw)
              (let
                        ((throw-hand (list-ref hands-lst current-hand))
                         (catch-hand (list-ref hands-lst (cadr current-throw))))
-               (cond ((and (= (car current-throw) 2) ; Long dwell on at least SOME 2s. Will still look a bit funky.
-                                 (= current-hand (cadr current-throw))) 
+               (cond ((and (= (car current-throw) hold-beats) ; Long dwell on at least SOME 2s. Will still look a bit funky.
+                           (= current-hand (cadr current-throw))) 
                             (begin 
                               (list (dwell-hold-path-segment (* beat-value (car current-throw)) throw-hand throw-hand
                                                              (list 'hold #t)))))
@@ -85,9 +85,7 @@
                                (ball-toss-path-segment 
                                 (- (* beat-value (car current-throw)) dwell-value) 
                                 throw-hand catch-hand
-                                (list 'orientation
-                                     
-                                      orientation))))))))
+                                (list 'orientation orientation))))))))
     
   ; There is funky, heavy duplication between this and update-object
     (define (start-object objects starting-object current-throw time current-hand)
