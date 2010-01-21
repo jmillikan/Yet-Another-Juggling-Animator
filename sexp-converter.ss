@@ -125,13 +125,13 @@
       ; horrible recursion...
       (let* ((c-pattern (apply circular-list sexp-pattern))
              (number-of-hands (length (car c-pattern)))
-             (number-of-objects (ss-value sexp-pattern)))
+             (number-of-objects (match (ss-value sexp-pattern) ((? integer? n) n) (_ (error "Siteswap value isn't an integer.")))))
         (let loop-throws ((time 0)
                           (unfinished-objects number-of-objects)
                           (c-pattern c-pattern)
                           (objects (make-list number-of-objects (list '- '* '* '() '-)))
                           (throws-this-beat (car c-pattern))
-                          (hand 0))              
+                          (hand 0))
           (cond ((= unfinished-objects 0) ; Done: Return objects, which includes initial delay and throw lists
                  objects)
                 ((null? throws-this-beat) ; Out of throw - move to next beat
@@ -143,7 +143,7 @@
                         (current-throw (car throws-this-beat))
                         (value (throw-value current-throw)))
                    (cond ((> (length objects-matching-throw) 1) ; No multiplexes for now. :(
-                          'flagrant-error)
+                          (error (format "Time ~a: Multiple objects met here." time)))
                          ((null? objects-matching-throw) ; No object expecting a throw
                           (if (not (eq? value '-)) 
                               ; There's a throw that no object expected.
@@ -170,7 +170,7 @@
                           ; Exactly one object expecting this throw.
                           (if (eq? value '-) 
                               ; There isn't a throw for the object expecting it...
-                              'flagrant-error                                  
+                              (error (format "Time ~a: No throw for object expecting it." time))                                   
                               ; Non-zero throw value for matched object. Plenium.
                               (let-values (((finished updated-objects ) (update-object objects (car objects-matching-throw) current-throw time hand)))
                                 (loop-throws time 
@@ -188,8 +188,11 @@
   
   (define (advance-beat objects)
     (map 
-     (λ (o) (match o ((list delay (list countdown dest) last-throw throw-list first-hand)
-                      (list delay (list (sub1 countdown) dest) last-throw throw-list first-hand))
+     (λ (o) (match o 
+              ((list delay (list (? zero?) dest) _ _ h)
+               (error (format "Object starting in ~a did not reach destination hand ~a" h dest)))
+              ((list delay (list countdown dest) last-throw throw-list first-hand)
+               (list delay (list (sub1 countdown) dest) last-throw throw-list first-hand))
               (_ o)))                     
      objects))                     
   
