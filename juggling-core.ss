@@ -104,7 +104,7 @@
                  
                  (spins
                   (cond 
-                    ((< tf 0.5) 0)
+                    ((< tf 0.5) 0) ; meh, not really helping
                     ((< tf 1.0) 1)
                     ((< tf 1.4) 2)
                     ((< tf 2.0) 3)

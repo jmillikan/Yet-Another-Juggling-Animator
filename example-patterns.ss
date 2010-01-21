@@ -66,12 +66,6 @@
   
   ; Put n jugglers (two hands) on the ground 
   ;(define (juggler-line n x y space angle)
-    
-  #;(define funky-pair-of-jugglers
-    (list (list-ref pair-of-jugglers 0)
-          (list-ref pair-of-jugglers 2)
-          (list-ref pair-of-jugglers 1)
-          (list-ref pair-of-jugglers 3)))
   
   ; N jugglers do a self v (same hand if even, opposite if odd) from hand h ('left/'right)
   (define (self n v h)
@@ -133,7 +127,8 @@
                 (iota (sub1 n))))))
   
   (define 4-hand-examples
-    '("966" "996" "9629669669969929" "86277" "86727" "5" "7" "9" "b" "db97" "db97531" "7966"))
+    '("966" "996" "9629669669969929" "86277" "86727" "5" "7" "9" "b" "db97" "db97531" "7966"
+            "747" "747b47747707" "b07" "945747747"))
   
   (define 2-ss-examples
     '("3" "4" "5" "6" "7" "8" "9" "7531" "db97531" "64514" "55550" "552" "5551" "555505551" "744" "51" "71" "91"))

@@ -30,8 +30,7 @@
       (define/public (set-error e)
         (send error-box set-value e))
       
-      (define error-box (instantiate text-field% ("" this)))
-      ))
+      (define error-box (instantiate text-field% ("" this)))))
   
   ; Tab panels don't automatically change panels when clicked... You have to rig it up yourself. Awesome.
   (define pattern-forms% 
@@ -78,24 +77,24 @@
       (init-field parent)
       
       (super-instantiate (parent) (alignment '(center center)) (stretchable-width #t))
-    
+      
       (define input-pattern (instantiate combo-field% (name examples-list this) (min-width 250) (init-value initial-pattern) (stretchable-width #t)))
       (define input-beat (instantiate text-field% ("" this) (init-value  initial-beat) (min-width 60) (stretchable-width #f)))
       (define input-dwell (instantiate text-field% ("" this) (init-value  initial-dwell) (min-width 60) (stretchable-width #f)))
       
       (instantiate button% 
         ("Run" this (λ _ 
-                        (with-handlers ((exn:fail? (λ (e) (send w set-error (exn-message e)))))
-                          (let*   
-                              ((beat-value (string->number (send input-beat get-value)))
-                               (dwell-value (string->number (send input-dwell get-value)))
-                               (sexp-pattern (pattern-lambda (send input-pattern get-value)))
-                               (pattern (sexp->pattern sexp-pattern beat-value dwell-value (hands-lambda))))
-                            (send w show-pattern
-                                  pattern
-                                  (hands-lambda))))))
+                      (with-handlers ((exn:fail? (λ (e) (send w set-error (exn-message e)))))
+                        (let*   
+                            ((beat-value (string->number (send input-beat get-value)))
+                             (dwell-value (string->number (send input-dwell get-value)))
+                             (sexp-pattern (pattern-lambda (send input-pattern get-value)))
+                             (pattern (sexp->pattern sexp-pattern beat-value dwell-value (hands-lambda))))
+                          (send w show-pattern
+                                pattern
+                                (hands-lambda))))))
         (stretchable-width #f))))
-
+  
   (define siteswap-form% 
     (class* vertical-panel% ()
       (init-field parent)
@@ -133,11 +132,12 @@
           (stretchable-width #t))
         (instantiate button% ("-" h (λ _ (send c zoom-out)))
           (stretchable-width #t)))
-      (instantiate combo-field% ("Object" (list "ball" "ring" "club") v) (callback 
-                                                                              (λ (l v) 
-                                                                                (with-handlers ((exn:fail? (λ (e) (send w set-error (exn-message e)))))
-                                                                                  (send c set-model 
-                                                                                      (send l get-value))))))
+      (instantiate combo-field% ("Object" (list "ball" "ring" "club") v) 
+        (callback 
+         (λ (l v) 
+           (with-handlers ((exn:fail? (λ (e) (send w set-error (exn-message e)))))
+             (send c set-model 
+                   (send l get-value))))))
       (let* ((h-time (instantiate horizontal-panel% (v) (alignment '(center center)) (stretchable-width #f)))
              (time-input (instantiate text-field% ("Time Scale" h-time) (min-width 100) (init-value "1.0") (stretchable-width #t))))              
         (instantiate button% ("Set" h-time (λ _ 
