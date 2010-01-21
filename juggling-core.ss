@@ -87,7 +87,9 @@
                  (a2-deg (radians->degrees a2))
                  
                  (angle-to-dest (get-angle (- x1 x2) (- y1 y2)))
-                 (backwards? (< 100 (angle-diff a1-deg angle-to-dest)))
+                 (backwards? 
+                  (begin #;(display (format "Checking angles for backwards. a1: ~a, dest: ~a, diff: ~a~n" a1-deg angle-to-dest (angle-diff a1-deg angle-to-dest)))
+                  (< 100 (angle-diff a1-deg angle-to-dest))))
                  
                  ; Ugh, at least now I can change this quickly
                  (throw-type (match (option options 'orientation)
@@ -114,6 +116,11 @@
                   (make-rotation -90 
                                  (match throw-type
                                    ('pass angle-to-dest)
+                                   ; You can't throw a backdrop certain ways
+                                   ; Well, I can't, anyhow.
+                                   ('backdrop 
+                                    (begin #;(display (format "Checking angles for backdrop. a1: ~a, a2: ~a, diff: ~a~n" a1-deg a2-deg (angle-diff a1-deg a2-deg)))
+                                    (if (> 45 (angle-diff a1-deg a2-deg)) a2-deg a1-deg)))
                                    (_ a2-deg))
                                  -90))
                  ; raise the catch point a bit for all throws
@@ -128,6 +135,7 @@
                                      (_ 0)))
                  (extra-rotation (match throw-type
                                    ('pass 90)
+                                   ('backdrop (if (> 45 (angle-diff a1-deg a2-deg)) 10 180)) 
                                    (_ 10))))
       (make-path-segment 
        tf
