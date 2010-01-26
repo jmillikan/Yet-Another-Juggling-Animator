@@ -1,5 +1,6 @@
 (module example-patterns scheme
   (require "juggling-core.ss" srfi/1)
+  (require "fourhss-converter.ss")
   
   (provide (all-defined-out))
   
@@ -93,8 +94,6 @@
             (sync (* number-of-jugglers 2) number-of-props 1 even?) 
             (sync (* number-of-jugglers 2) number-of-props -1 odd?))))
   
-  
-  
   ; AUUUUUGH.
   ; I should have written functions for the individual roles in a feed
   ; And then finally started writing functions to sew jugglers together...
@@ -128,7 +127,7 @@
   
   (define 4-hand-examples
     '("966" "996" "9629669669969929" "86277" "86727" "5" "7" "9" "b" "db97" "db97531" "7966"
-            "747" "747b47747707" "b07" "945747747"))
+            "747" "747b47747707" "7b7740747747" "945747747"))
   
   (define 2-ss-examples
     '("3" "4" "5" "6" "7" "8" "9" "7531" "db97531" "64514" "55550" "552" "5551" "555505551" "744" "51" "71" "91"))
@@ -190,8 +189,13 @@
       "#;(600 juggler 3-count - Slow) (3-count 600 3)"
       "#;(5-club feed, 10 feedees) (typewriter-feed 11 2 5)"
       "#;(7-club singles) '(((11 3) - - -) () (- (10 0)) (- - (11 1)) () (- - - (10 2)))"
-      
+      "7-with-double"
+      "#;(Some 3/4 man 747-ish feeds) 747-feed"
+      "777-feed"
+      "777-feed-3s"
+      "777-feed-3s-vs-takeouts"
       ))
+   
   
     (define jims-3-star
     '(*
@@ -217,6 +221,7 @@
           "pair-of-jugglers ; r1 l1 r2 l2)"
           "funky-pair-of-jugglers ; r1 r2 l1 l2 (4-hand SS)"
           "3-man-line ; r1 l1 ..."
+          "#;(Back to back) (append pair-of-hands (translate-hands (rotate-hands pair-of-hands pi) 0 -1.5 0))"
           "#;(Triangle) (juggler-circle 3 2.5)"
           "#;(Star) (juggler-circle 5 3.0)"
           "#;(Star) (rotate-hands (juggler-circle 5 3.0) (/ (* pi 0) 16)) "
@@ -229,7 +234,9 @@
           "#;(Async gorilla hands) (mangle-hands (juggler-circle 3 3.0) '(3 0 1 2 4 5))"
           "#;(5-man dropback line) (dropback-line 3 3.0 #t #t)"
           "#;(40-man \"canoe\" (longboat?)) (append (dropback-line 19 3.0 #t #f) (translate-hands (rotate-hands (dropback-line 19 3.0 #t #f) pi) 60 3 0))"
-          "#;(11-man feed, elevated feeder) (append (take (juggler-circle 30 10.0) 20) (translate-hands (rotate-hands pair-of-hands (* pi 9/7)) 0 0 3.0)))"
+          "#;(11-man feed, elevated feeder (feeder last)) (append (take (juggler-circle 30 10.0) 20) (translate-hands (rotate-hands pair-of-hands (* pi 9/7)) 0 0 3.0)))"
+          "#;(Wide 4-man feed (feeder first)) (append (rotate-hands pair-of-hands (* pi 1.14)) (take (juggler-circle 15 9.0) 6)))"
+          "(append (rotate-hands pair-of-hands (* pi 1.14)) (map list-ref (circular-list (juggler-circle 15 9.0)) '(0 1 4 5)) (rotate-hands (translate-hands pair-of-hands 0 -2.0 0) (* pi 1.14)))"
           ))
   
   (define 3-man-line (list
@@ -241,6 +248,103 @@
                       (list (make-position -0.55 -3 1.0) (make-position -0.8 -3 1.0))))
   
   
+  (define 747-sexp 
+    '(((7 3) - - -)
+      (- - (4 2) -)
+      (- (7 2) - -)
+      (- - - (7 1))
+      ((4 0) - - -)
+      (- - (7 0) -)
+      (- (7 2) - -)
+      (- - - (4 3))
+      ((7 3) - - -)
+      (- - (7 0) -)
+      (- (4 1) - -)
+      (- - - (7 1))))
   
+  (define 747-feed 
+    '(((7 3) - - - - -)
+      (- - (4 2) - (4 4) -)
+      (- (7 4) - -)
+      (- - - (7 1) - (4 5))
+      ((4 0) - - -)
+      (- - (4 2) - (7 0) -)
+      (- (7 2) - -)
+      (- - - (4 3) - (4 5))
+      ((7 5) - - -)
+      (- - (7 0) - (4 4) -)
+      (- (4 1) - -)
+      (- - - (4 3) - (7 1))))
+  
+  
+  (define 777-747-744-feed 
+    '(((7 3) - - - - -)
+      (- - (4 2) - (4 4) -)
+      (- (7 4) - -)
+      (- - - (7 1) - (4 5))
+      ((4 0) - - -)
+      (- - (4 2) - (7 0) -)
+      (- (7 2) - -)
+      (- - - (4 3) - (4 5))
+      ((7 5) - - -)
+      (- - (7 0) - (4 4) -)
+      (- (4 1) - -)
+      (- - - (4 3) - (7 1))))
+  
+  (define 777-feed 
+    '(((7 3) - - - - -)
+      (- - (4 2) - (4 4) - (7 0) -)
+      (- (7 4) - -)
+      (- - - (7 1) - (4 5) - (4 7))
+      ((7 7) - - -)
+      (- - (4 2) - (7 0) - (4 6) -)
+      (- (7 2) - -)
+      (- - - (4 3) - (4 5) - (7 1))
+      ((7 5) - - -)
+      (- - (7 0) - (4 4) - (4 6) -)
+      (- (7 6) - -)
+      (- - - (4 3) - (7 1) - (4 7))))
+  
+  (define 777-feed-3s 
+    '(((7 3) - - - - -)
+      (- - (9 1) - (6 5) - (6 7) -)
+      (- (7 4) - -)
+      (- - - (6 2) - (9 0) - (6 6))
+      ((7 7) - - -)
+      (- - (6 3) - (6 5) - (9 1) -)
+      (- (7 2) - -)
+      (- - - (9 0) - (6 4) - (6 6))
+      ((7 5) - - -)
+      (- - (6 3) - (9 1) - (6 7) -)
+      (- (7 6) - -)
+      (- - - (6 2) - (6 4) - (9 0))))
+  
+  (define 777-feed-3s-vs-744
+    '(((7 3) - - - - -)
+      (- - (9 1) - (6 5) - (7 0) -)
+      (- (7 4) - -) ; a
+      (- - - (6 2) - (9 0) - (4 7)) 
+      ((7 7) - - -) ; to d
+      (- - (6 3) - (6 5) - (4 6) -) ; c - To beat a
+      (- (7 2) - -)
+      (- - - (9 0) - (6 4) - (7 1))
+      ((7 5) - - -)
+      (- - (6 3) - (9 1) - (4 6) -)
+      (- (7 6) - -) ; to c
+      (- - - (6 2) - (6 4) - (4 7)))) ; d - To beat b
+  
+  (define 777-feed-3s-vs-takeouts
+    '(((7 3) - - - - - - -)
+      (- - (9 1) - (6 5) - - (2 6))
+      (- (7 4) - -) ; a
+      (- - - (6 2) - (9 0) (5 0) -) 
+      ((3 6) - - -) ; to d
+      (- - (6 3) - (6 5) - - -) ; c - To beat a
+      (- (7 2) - -)
+      (- - - (9 0) - (6 4) (2 7) -)
+      ((7 5) - - -)
+      (- - (6 3) - (9 1) - - (5 1))
+      (- (3 7) - -) ; to c
+      (- - - (6 2) - (6 4) - -))) ; d - To beat b
   
   )
