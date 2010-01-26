@@ -283,5 +283,8 @@
    ball-toss-path-segment dwell-hold-path-segment 
    advance-path-state! advance-pattern! map-pattern
    
+   radians->degrees
+   angle-diff
+   
    rotate translate
    rotate-hands translate-hands))

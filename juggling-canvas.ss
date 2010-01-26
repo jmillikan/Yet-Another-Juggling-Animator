@@ -101,13 +101,10 @@
            (begin
              (set! screen-x-last (send e get-x))
              (set! screen-y-last (send e get-y))
-             (set! screen-rot-tracking? #t))
-             
-             #;(display (format "Left click!~n")))
+             (set! screen-rot-tracking? #t)))
           ((send e button-up? 'left) 
            (begin
-             (set! screen-rot-tracking? #f)
-             #;(display (format "Left unclick!~n"))))
+             (set! screen-rot-tracking? #f)))
           ((send e button-down? 'right)
            (begin
              (set! screen-x-last (send e get-x))
@@ -115,8 +112,7 @@
              (set! screen-pos-tracking? #t)))
           ((send e button-up? 'left) 
            (begin
-             (set! screen-pos-tracking? #f)
-             #;(display (format "Left unclick!~n"))))
+             (set! screen-pos-tracking? #f)))
           ((send e dragging?)
            (cond (screen-rot-tracking?
              
@@ -127,8 +123,7 @@
                                        (* (- new-y screen-y-last) 0.2))) ; 1/5th a degree per pixel?
                     
                     (set! screen-x-last new-x)
-                    (set! screen-y-last new-y)
-                    #;(display (format "Dragging to ~a, ~a~n" new-x new-y))))
+                    (set! screen-y-last new-y)))
                  (screen-pos-tracking?
                   (let ((new-x (send e get-x)) (new-y (send e get-y)))
                     (set! view-posx (+ view-posx 
@@ -138,7 +133,6 @@
                     
                     (set! screen-x-last new-x)
                     (set! screen-y-last new-y)))))
-        
         
           (#t (begin
                 (set! screen-rot-tracking? #f)
@@ -170,7 +164,66 @@
              (gl-enable 'normalize))))
         (refresh))
       
+      (define juggler-static-model #f)
+      
       (define (create-objects)
+        (let 
+            ((shoulder-width 0.9)
+                    (upper-arm-length 0.5)
+                    (lower-arm-length 0.5))
+        (set! juggler-static-model (gl-gen-lists 1))
+        (gl-new-list juggler-static-model 'compile)
+        ; Show a nice grid (size determined by 2 x grid-size, each square is grid-unit across.)
+                   (gl-material-v 'front-and-back
+                                  'ambient-and-diffuse
+                                  (vector->gl-float-vector (vector 0.9 0.9 0.9 1.0)))
+                   (gl-translate -0.9 0.0 0.0)                 
+                   (gl-cylinder quadric 0.13 0.13 2.0 10 1)
+                   (gl-translate 0.05 0.0 2.0)
+                   (gl-sphere quadric 0.3 10 10)
+                   
+                   (gl-translate -0.12 0.0 -0.5)                   
+                   ; Something like shoulders and collarbone...
+                   (gl-push-matrix)
+                   (gl-rotate 90 1.0 0.0 0.0)
+                   
+                   (gl-translate 0.0 0.0 (- (/ shoulder-width 2)))
+                   
+                   
+        ; upper arm, left            
+        (gl-push-matrix)
+        (gl-rotate 100 1.0 0.0 0.0)
+        (gl-rotate 10 0.0 1.0 0.0)
+        (gl-cylinder quadric 0.08 0.08 upper-arm-length 10 1)
+        (gl-translate 0.0 0.0 upper-arm-length)
+        (gl-sphere quadric 0.08 10 10)
+        (gl-rotate 90 0.0 1.0 0.0)
+        (gl-cylinder quadric 0.08 0.06 lower-arm-length 10 1)
+        (gl-translate 0.0 0.0 lower-arm-length)
+        (gl-sphere quadric 0.06 10 10)
+        (gl-pop-matrix)
+        ; shoulder, left
+        (gl-sphere quadric 0.1 10 10)
+        (gl-cylinder quadric 0.08 0.08 shoulder-width 10 1)
+        (gl-translate 0.0 0.0 shoulder-width)
+        ; shoulder, right
+        (gl-sphere quadric 0.1 10 10)
+        ; upper arm, right
+        (gl-push-matrix)
+        (gl-rotate 80 1.0 0.0 0.0)
+        (gl-rotate 10 0.0 1.0 0.0)
+        (gl-cylinder quadric 0.08 0.08 upper-arm-length 10 1)
+        (gl-translate 0.0 0.0 upper-arm-length)
+        (gl-sphere quadric 0.08 10 10)
+        (gl-rotate 90 0.0 1.0 0.0)
+        (gl-cylinder quadric 0.08 0.06 lower-arm-length 10 1)
+        (gl-translate 0.0 0.0 lower-arm-length)
+        (gl-sphere quadric 0.06 10 10)
+        (gl-pop-matrix)
+        (gl-pop-matrix)
+        (gl-normal 0 0 1)
+        (gl-end-list))
+        
         (set! ball-model (gl-gen-lists 1))
         (gl-new-list ball-model 'compile)          
         (gl-sphere quadric 0.1 10 10)
@@ -199,7 +252,7 @@
         (gl-translate 0 0 0.2)
         (gl-cylinder quadric 0.085 0.05 0.2 10 1)
         (gl-translate 0 0 0.2)
-        (gl-sphere quadric 0.05 5 5)
+        (gl-sphere quadric 0.05 10 5)
         
         ;(gl-translate
         (gl-end-list)
@@ -229,10 +282,10 @@
               (set! internal-pattern p)
               (advance-pattern! internal-pattern 0))
             
-            'flagrant-error))
+            (error "Internal failure: That's really just not a pattern.~n")))
       
       (define/public (set-jugglers j)
-        (set! jugglers (jugglers-lambda j))
+        #;(set! jugglers (jugglers-lambda j))
         (with-gl-context
          (lambda ()
            (set! jugglers-static (gl-gen-lists 1))
@@ -256,12 +309,21 @@
              
              (gl-push-matrix)
              
-             (gl-translate view-posx (- view-posy) 0)
-             (gl-translate 0.0 -1.0 view-zoom)
-             (gl-translate 0.0 (+ (/ view-zoom 8) 1.0) view-zoom)
-             (gl-rotate view-rotx 1.0 0.0 0.0)
-             (gl-rotate view-roty 0.0 1.0 0.0)
-             (gl-rotate view-rotz 0.0 0.0 1.0)
+             #;(begin
+               (gl-translate view-posx (- view-posy) 0)
+               (gl-translate 0.0 -1.0 view-zoom)
+               (gl-translate 0.0 (+ (/ view-zoom 8) 1.0) view-zoom)
+               (gl-rotate view-rotx 1.0 0.0 0.0)
+               (gl-rotate view-roty 0.0 1.0 0.0)
+               (gl-rotate view-rotz 0.0 0.0 1.0))
+             
+             (begin
+               (gl-translate view-posx (- view-posy) 0)
+               (gl-translate 0.0 -1.0 view-zoom)
+               (gl-translate 0.0 (+ (/ view-zoom 8) 1.0) view-zoom)
+               (gl-rotate view-rotx 1.0 0.0 0.0)
+               (gl-rotate view-roty 0.0 1.0 0.0)
+               (gl-rotate view-rotz 0.0 0.0 1.0))
              
              (map-pattern 
               (lambda (prop pos rot spin)
@@ -321,52 +383,38 @@
             (set! step? #f)
             (queue-callback (lambda x (send this run))))))
       
+      (define (bisect a1 a2)
+        (+ 180 (- (/ (+ a1 a2) 2))))
+      
       ; Create a lambda rendering hand positions for a list of hands.
-      ; Right now, it just does squares beneath the catch/receive positions.
+      ; Right now, it's approximated by drawing a figure between hand pairs.
+     
       (define (jugglers-lambda hands-lst)
         (lambda ()       
-          (map 
-           (lambda (h) ; render squares vaguely under both the throw and catch position.
-             ; render arrow in the direction of angle from x1 y1
-             (match-let 
-                 (((struct hand ((struct position (x1 y1 z1)) (struct position (x2 y2 z2)) angle)) h))
-               (begin
-                 (gl-material-v 'front
-                                'ambient-and-diffuse
-                                (vector->gl-float-vector (vector 0.2 1.0 0.3 1.0)))
-                 
-                 (gl-begin 'quads)
-                 (gl-vertex (+ x1 0.2) (+ y1 0.2) (- z1 1.0))
-                 (gl-vertex (- x1 0.2) (+ y1 0.2) (- z1 1.0))
-                 (gl-vertex (- x1 0.2) (- y1 0.2) (- z1 1.0))
-                 (gl-vertex (+ x1 0.2) (- y1 0.2) (- z1 1.0))
-                 (gl-end)
-                 
-                 (gl-material-v 'front
-                                'ambient-and-diffuse
-                                (vector->gl-float-vector (vector 1.0 0.2 0.1 1.0)))
-                 
-                 (gl-begin 'quads)
-                 (gl-vertex (+ x2 0.2) (+ y2 0.2) (- z2 1.0))
-                 (gl-vertex (- x2 0.2) (+ y2 0.2) (- z2 1.0))
-                 (gl-vertex (- x2 0.2) (- y2 0.2) (- z2 1.0))
-                 (gl-vertex (+ x2 0.2) (- y2 0.2) (- z2 1.0))
-                 (gl-end)
-                 
-                 (gl-material-v 'front
-                                'ambient-and-diffuse
-                                (vector->gl-float-vector (vector 0.2 1.0 0.3 1.0)))
-                 
-                 ; There's way more obvious ways to do this just using OpenGL... Oh well.
-                 (match-let*
-                     ((unit (make-position 1 0 0))
-                      ((struct position (ax ay _)) (rotate unit angle)))
-                   (begin
-                     (gl-begin 'lines)
-                     (gl-vertex x1 y1 (- z1 1.0))
-                     (gl-vertex (+ x1 ax) (+ ay y1) (- z1 1.0))
-                     (gl-end))))))
-           
-           hands-lst)))
+          (let loop-pairs ((lst hands-lst))
+            (match lst
+              ((list-rest (struct hand ((struct position (x1 y1 z1)) c1 a1)) (struct hand ((struct position (x2 y2 z2)) c2 a2)) rest)
+               (let*
+                   ((x-center (/ (+ x1 x2) 2))
+                    (y-center (/ (+ y1 y2) 2))
+                    (z-center (- (/ (+ z1 z2) 2) 1.0))
+                    (a1-deg (radians->degrees a1))
+                    (a2-deg (radians->degrees a2))
+                    (a-facing (bisect a1-deg a2-deg)) ; Not sure about the math on this.
+                    (shoulder-width 0.9)
+                    (upper-arm-length 0.5)
+                    (lower-arm-length 0.5))
+                 (begin
+                   (gl-push-matrix)
+                   
+                   (gl-translate x-center y-center z-center)
+                   (gl-rotate (+ 180 a-facing) 0.0 0.0 1.0)
+                   
+                   (gl-call-list juggler-static-model) ; Show the immobile parts of the juggler
+                   ; (That's all of it right now)
+                   
+                   (gl-pop-matrix)
+                   (loop-pairs rest))))
+              (_ '())))))
       
       (super-instantiate () (style '(gl no-autoclear))))))
