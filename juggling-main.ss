@@ -105,7 +105,7 @@
       (super-instantiate (parent) (alignment '(center center)) (stretchable-height #f))
       (instantiate pattern-line% ("Siteswap" "0.25" "0.16" "744" 2hss->sexp 2 
                                              (λ _ pair-of-hands) w 2-ss-examples this))
-      (instantiate pattern-line% ("4-hand SS" "0.15" "0.13" "966" 4hss->sexp 4 
+      (instantiate pattern-line% ("4-hand SS" "0.15" "0.20" "966" 4hss->sexp 4 
                                               (λ _ (juggler-circle 2 3.0)) w 4-hand-examples this))
       (instantiate pattern-line% ("Synchronous" "0.25" "0.20" "(6x,4)*" sync-ss->sexp 2 
                                                 (λ _ (juggler-circle 2 3.0)) w syncss-examples this))))
