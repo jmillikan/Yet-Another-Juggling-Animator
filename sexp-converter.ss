@@ -12,7 +12,7 @@
     (cond
       ((null? list) '())
       ((equal? (car list) elem) (cons new-elem list))
-      (#t (cons (car list) (replace-item (cdr list) elem new-elem)))))                  
+      (#t (cons (car list) (replace-item (cdr list) elem new-elem)))))
   
   (define (has? lst-or-atom mem)
     (or (equal? lst-or-atom mem)
@@ -64,30 +64,29 @@
   
   (define (sexp->pattern-internal sexp-pattern beat-value dwell-value hands-lst hold-beats)    
     (define (build-segments current-hand current-throw)
-             (let
-                       ((throw-hand (list-ref hands-lst current-hand))
-                        (catch-hand (list-ref hands-lst (cadr current-throw))))
-               (cond ((and (= (car current-throw) hold-beats) ; Long dwell on at least SOME 2s. Will still look a bit funky.
-                           (= current-hand (cadr current-throw))) 
-                            (begin 
-                              (list (dwell-hold-path-segment (* beat-value (car current-throw)) throw-hand throw-hand
-                                                             (list 'hold #t)))))
-                           (#t
-                            (let ((orientation 
-                                   (if (= (floor (/ current-hand 2)) (floor (/ (cadr current-throw) 2))) 
-                                       'perpendicular ; pass! Paralell to throw line
-                                       'parallel))) ; Hand to hand - perpendicular to throw line.
-                              (list
-                               ; 1st dwell segment comes right after...
-                               (dwell-hold-path-segment dwell-value catch-hand throw-hand
-                                                        (list 'orientation orientation))
-                               ; 1st toss segment
-                               (ball-toss-path-segment 
-                                (- (* beat-value (car current-throw)) dwell-value) 
-                                throw-hand catch-hand
-                                (list 'orientation orientation))))))))
+      (let
+          ((throw-hand (list-ref hands-lst current-hand))
+           (catch-hand (list-ref hands-lst (cadr current-throw))))
+        (cond ((and (= (car current-throw) hold-beats) ; Long dwell on at least SOME 2s. Will still look a bit funky.
+                    (= current-hand (cadr current-throw))) 
+               (begin 
+                 (list (hold-path-segment (* beat-value (car current-throw)) throw-hand))))
+              (#t
+               (let ((orientation 
+                      (if (= (floor (/ current-hand 2)) (floor (/ (cadr current-throw) 2))) 
+                          'perpendicular ; pass! Paralell to throw line
+                          'parallel))) ; Hand to hand - perpendicular to throw line.
+                 (list
+                  ; 1st dwell segment comes right after...
+                  (dwell-hold-path-segment dwell-value catch-hand throw-hand
+                                           (list 'orientation orientation))
+                  ; 1st toss segment
+                  (ball-toss-path-segment 
+                   (- (* beat-value (car current-throw)) dwell-value) 
+                   throw-hand catch-hand
+                   (list 'orientation orientation))))))))
     
-  ; There is funky, heavy duplication between this and update-object
+    ; There is funky, heavy duplication between this and update-object
     (define (start-object objects starting-object current-throw time current-hand)
       (let ((new-object
              (list time ; delay
@@ -117,11 +116,11 @@
       (λ (o)
         (match o ((list delay _ first-throw throw-lst first-hand )
                   (let ((start-hand (list-ref hands-lst first-hand)))
-                     (make-path-state 0 (cons ; Initial dwell hold runs for the whole delay, which could be very slow and hilariously trippy in some cases.
-                                         ; These dwell holds are in the wrong hand, they're in the destination hand...
-                                         ; I didn't save the starting hand >_<
-                                         (dwell-hold-path-segment (* delay beat-value) start-hand start-hand)
-                                         (apply circular-list (reverse throw-lst))))))))
+                    (make-path-state 0 (cons ; Initial dwell hold runs for the whole delay, which could be very slow and hilariously trippy in some cases.
+                                        ; These dwell holds are in the wrong hand, they're in the destination hand...
+                                        ; I didn't save the starting hand >_<
+                                        (dwell-hold-path-segment (* delay beat-value) start-hand start-hand)
+                                        (apply circular-list (reverse throw-lst))))))))
       ; horrible recursion...
       (let* ((c-pattern (apply circular-list sexp-pattern))
              (number-of-hands (length (car c-pattern)))

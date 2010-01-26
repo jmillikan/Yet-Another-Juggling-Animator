@@ -192,6 +192,12 @@
   
   ; Options are an alist, I guess  
   
+  (define (hold-path-segment tf h1 . options)
+    (make-path-segment tf
+                       (match-let* (((struct hand (p1 _ a1)) h1)
+                                    (a1-deg (radians->degrees a1)))
+                         (λ _ (values p1 (make-rotation -90 a1-deg -90) (make-rotation 0 10 0))))))
+    
   (define (dwell-hold-path-segment tf h1 h-throw . options)
     (match-let* (((struct hand ((struct position (x2 y2 z2)) 
                                 (struct position (x1 y1 z1)) 
@@ -280,7 +286,7 @@
    (struct-out hand)
    ; todo: Figure out how to export less?
    
-   ball-toss-path-segment dwell-hold-path-segment 
+   ball-toss-path-segment dwell-hold-path-segment hold-path-segment
    advance-path-state! advance-pattern! map-pattern
    
    radians->degrees
