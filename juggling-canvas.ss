@@ -15,7 +15,7 @@
       
       (define view-rotx -70.0)
       (define view-roty 0.0)
-      (define view-rotz 20.0)
+      (define view-rotz 170.0)
       
       (define view-posx 0.0)
       (define view-posy 0.0)
@@ -85,7 +85,7 @@
       (define/public (zoom-in)
         (set! view-zoom (min 0.0 (+ view-zoom 3.0)))
         (refresh))
-            
+      
       (define/public (zoom-out)
         (set! view-zoom (max -100.0 (- view-zoom 3.0)))
         (refresh))
@@ -115,7 +115,7 @@
              (set! screen-pos-tracking? #f)))
           ((send e dragging?)
            (cond (screen-rot-tracking?
-             
+                  
                   (let ((new-x (send e get-x)) (new-y (send e get-y)))
                     (set! view-rotz (+ view-rotz 
                                        (* (- new-x screen-x-last) 0.2))) ; 1/5th a degree per pixel?
@@ -133,7 +133,7 @@
                     
                     (set! screen-x-last new-x)
                     (set! screen-y-last new-y)))))
-        
+          
           (#t (begin
                 (set! screen-rot-tracking? #f)
                 (set! screen-pos-tracking? #f)))))
@@ -148,12 +148,12 @@
            (let ((h (/ height width)))
              (gl-frustum -1.0 1.0 (- h) h 5.0 1000.0))
            (gl-matrix-mode 'modelview)
-               
+           
            (gl-enable 'cull-face)
            (gl-enable 'lighting)
            (gl-enable 'light0)
            (gl-enable 'depth-test)
-                      
+           
            (unless internal-pattern
              (set! quadric (gl-new-quadric))
              (set! last-ms (current-milliseconds))
@@ -169,60 +169,60 @@
       (define (create-objects)
         (let 
             ((shoulder-width 0.9)
-                    (upper-arm-length 0.5)
-                    (lower-arm-length 0.5))
-        (set! juggler-static-model (gl-gen-lists 1))
-        (gl-new-list juggler-static-model 'compile)
-        ; Show a nice grid (size determined by 2 x grid-size, each square is grid-unit across.)
-                   (gl-material-v 'front-and-back
-                                  'ambient-and-diffuse
-                                  (vector->gl-float-vector (vector 0.9 0.9 0.9 1.0)))
-                   (gl-translate -0.9 0.0 0.0)                 
-                   (gl-cylinder quadric 0.13 0.13 2.0 10 1)
-                   (gl-translate 0.05 0.0 2.0)
-                   (gl-sphere quadric 0.3 10 10)
-                   
-                   (gl-translate -0.12 0.0 -0.5)                   
-                   ; Something like shoulders and collarbone...
-                   (gl-push-matrix)
-                   (gl-rotate 90 1.0 0.0 0.0)
-                   
-                   (gl-translate 0.0 0.0 (- (/ shoulder-width 2)))
-                   
-                   
-        ; upper arm, left            
-        (gl-push-matrix)
-        (gl-rotate 100 1.0 0.0 0.0)
-        (gl-rotate 10 0.0 1.0 0.0)
-        (gl-cylinder quadric 0.08 0.08 upper-arm-length 10 1)
-        (gl-translate 0.0 0.0 upper-arm-length)
-        (gl-sphere quadric 0.08 10 10)
-        (gl-rotate 90 0.0 1.0 0.0)
-        (gl-cylinder quadric 0.08 0.06 lower-arm-length 10 1)
-        (gl-translate 0.0 0.0 lower-arm-length)
-        (gl-sphere quadric 0.06 10 10)
-        (gl-pop-matrix)
-        ; shoulder, left
-        (gl-sphere quadric 0.1 10 10)
-        (gl-cylinder quadric 0.08 0.08 shoulder-width 10 1)
-        (gl-translate 0.0 0.0 shoulder-width)
-        ; shoulder, right
-        (gl-sphere quadric 0.1 10 10)
-        ; upper arm, right
-        (gl-push-matrix)
-        (gl-rotate 80 1.0 0.0 0.0)
-        (gl-rotate 10 0.0 1.0 0.0)
-        (gl-cylinder quadric 0.08 0.08 upper-arm-length 10 1)
-        (gl-translate 0.0 0.0 upper-arm-length)
-        (gl-sphere quadric 0.08 10 10)
-        (gl-rotate 90 0.0 1.0 0.0)
-        (gl-cylinder quadric 0.08 0.06 lower-arm-length 10 1)
-        (gl-translate 0.0 0.0 lower-arm-length)
-        (gl-sphere quadric 0.06 10 10)
-        (gl-pop-matrix)
-        (gl-pop-matrix)
-        (gl-normal 0 0 1)
-        (gl-end-list))
+             (upper-arm-length 0.5)
+             (lower-arm-length 0.5))
+          (set! juggler-static-model (gl-gen-lists 1))
+          (gl-new-list juggler-static-model 'compile)
+          ; Show a nice grid (size determined by 2 x grid-size, each square is grid-unit across.)
+          (gl-material-v 'front-and-back
+                         'ambient-and-diffuse
+                         (vector->gl-float-vector (vector 0.9 0.9 0.9 1.0)))
+          (gl-translate -0.9 0.0 0.0)                 
+          (gl-cylinder quadric 0.13 0.13 2.0 10 1)
+          (gl-translate 0.05 0.0 2.0)
+          (gl-sphere quadric 0.3 10 10)
+          
+          (gl-translate -0.12 0.0 -0.5)                   
+          ; Something like shoulders and collarbone...
+          (gl-push-matrix)
+          (gl-rotate 90 1.0 0.0 0.0)
+          
+          (gl-translate 0.0 0.0 (- (/ shoulder-width 2)))
+          
+          
+          ; upper arm, left            
+          (gl-push-matrix)
+          (gl-rotate 100 1.0 0.0 0.0)
+          (gl-rotate 10 0.0 1.0 0.0)
+          (gl-cylinder quadric 0.08 0.08 upper-arm-length 10 1)
+          (gl-translate 0.0 0.0 upper-arm-length)
+          (gl-sphere quadric 0.08 10 10)
+          (gl-rotate 90 0.0 1.0 0.0)
+          (gl-cylinder quadric 0.08 0.06 lower-arm-length 10 1)
+          (gl-translate 0.0 0.0 lower-arm-length)
+          (gl-sphere quadric 0.06 10 10)
+          (gl-pop-matrix)
+          ; shoulder, left
+          (gl-sphere quadric 0.1 10 10)
+          (gl-cylinder quadric 0.08 0.08 shoulder-width 10 1)
+          (gl-translate 0.0 0.0 shoulder-width)
+          ; shoulder, right
+          (gl-sphere quadric 0.1 10 10)
+          ; upper arm, right
+          (gl-push-matrix)
+          (gl-rotate 80 1.0 0.0 0.0)
+          (gl-rotate 10 0.0 1.0 0.0)
+          (gl-cylinder quadric 0.08 0.08 upper-arm-length 10 1)
+          (gl-translate 0.0 0.0 upper-arm-length)
+          (gl-sphere quadric 0.08 10 10)
+          (gl-rotate 90 0.0 1.0 0.0)
+          (gl-cylinder quadric 0.08 0.06 lower-arm-length 10 1)
+          (gl-translate 0.0 0.0 lower-arm-length)
+          (gl-sphere quadric 0.06 10 10)
+          (gl-pop-matrix)
+          (gl-pop-matrix)
+          (gl-normal 0 0 1)
+          (gl-end-list))
         
         (set! ball-model (gl-gen-lists 1))
         (gl-new-list ball-model 'compile)          
@@ -257,19 +257,19 @@
         ;(gl-translate
         (gl-end-list)
         )
-        
+      
       
       ; This is misnamed... At the moment, it's colors.
       (define colors
         (circular-list
-           '(0.1 0.1 0.1 1.0) 
-           '(0.1 1.0 0.1 0.1)
-           '(0.1 0.1 1.0 0.1)
-           '(0.1 0.6 0.6 0.1)
-           '(0.1 0.1 0.6 0.6)
-           '(0.1 0.6 0.1 0.6)
-           '(0.1 1.0 0.2 0.6)
-           ))
+         '(0.1 0.1 0.1 1.0) 
+         '(0.1 1.0 0.1 0.1)
+         '(0.1 0.1 1.0 0.1)
+         '(0.1 0.6 0.6 0.1)
+         '(0.1 0.1 0.6 0.6)
+         '(0.1 0.6 0.1 0.6)
+         '(0.1 1.0 0.2 0.6)
+         ))
       
       (define ball-model #f)
       (define ring-model #f)
@@ -292,7 +292,7 @@
            (gl-new-list jugglers-static 'compile)          
            ((jugglers-lambda j))
            (gl-end-list))))
-        
+      
       (define jugglers-static #f)
       
       (define/override (on-paint)
@@ -308,14 +308,6 @@
              (gl-clear 'color-buffer-bit 'depth-buffer-bit)
              
              (gl-push-matrix)
-             
-             #;(begin
-               (gl-translate view-posx (- view-posy) 0)
-               (gl-translate 0.0 -1.0 view-zoom)
-               (gl-translate 0.0 (+ (/ view-zoom 8) 1.0) view-zoom)
-               (gl-rotate view-rotx 1.0 0.0 0.0)
-               (gl-rotate view-roty 0.0 1.0 0.0)
-               (gl-rotate view-rotz 0.0 0.0 1.0))
              
              (begin
                (gl-translate view-posx (- view-posy) 0)
@@ -388,7 +380,7 @@
       
       ; Create a lambda rendering hand positions for a list of hands.
       ; Right now, it's approximated by drawing a figure between hand pairs.
-     
+      
       (define (jugglers-lambda hands-lst)
         (lambda ()       
           (let loop-pairs ((lst hands-lst))
