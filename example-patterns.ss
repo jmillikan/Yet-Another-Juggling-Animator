@@ -127,7 +127,7 @@
   
   (define 4-hand-examples
     '("966" "996" "9629669669969929" "86277" "86727" "5" "7" "9" "b" "db97" "db97531" "7966"
-            "747" "747b47747707" "7b7740747747" "945747747"))
+            "747" "747b47747707" "7b7740747747" "945747747" "794646" "7946466"))
   
   (define 2-ss-examples
     '("3" "4" "5" "6" "7" "8" "9" "7531" "db97531" "64514" "55550" "552" "5551" "555505551" "744" "51" "71" "91"))
@@ -189,20 +189,19 @@
       "#;(600 juggler 3-count - Slow) (3-count 600 3)"
       "#;(5-club feed, 10 feedees) (typewriter-feed 11 2 5)"
       "#;(7-club singles) '(((11 3) - - -) () (- (10 0)) (- - (11 1)) () (- - - (10 2)))"
-      "7-with-double"
       "#;(Some 3/4 man 747-ish feeds) 747-feed"
       "777-feed"
+      "777-747-744-feed "
       "777-feed-3s"
+      "777-feed-3s-vs-744"
       "777-feed-3s-vs-takeouts"
       ))
    
-  
     (define jims-3-star
     '(*
       ((3 3) - (3 0) -) 
       ((3 1) - - (4 2)) 
       (- (3 0) (2 3) -)
-                        
       ((3 3) - - (3 1)) 
       (- (4 0) - (3 2)) 
       ((2 1) - (3 3) -)))
@@ -236,7 +235,7 @@
           "#;(40-man \"canoe\" (longboat?)) (append (dropback-line 19 3.0 #t #f) (translate-hands (rotate-hands (dropback-line 19 3.0 #t #f) pi) 60 3 0))"
           "#;(11-man feed, elevated feeder (feeder last)) (append (take (juggler-circle 30 10.0) 20) (translate-hands (rotate-hands pair-of-hands (* pi 9/7)) 0 0 3.0)))"
           "#;(Wide 4-man feed (feeder first)) (append (rotate-hands pair-of-hands (* pi 1.14)) (take (juggler-circle 15 9.0) 6)))"
-          "(append (rotate-hands pair-of-hands (* pi 1.14)) (map list-ref (circular-list (juggler-circle 15 9.0)) '(0 1 4 5)) (rotate-hands (translate-hands pair-of-hands 0 -2.0 0) (* pi 1.14)))"
+          "(append (rotate-hands pair-of-hands (* pi 1.14)) (map list-ref (circular-list (juggler-circle 15 9.0)) '(0 1 4 5)) (rotate-hands (translate-hands pair-of-hands 0 -1.5 0.5) (* pi 1.14)))"
           ))
   
   (define 3-man-line (list
@@ -279,16 +278,16 @@
   
   (define 777-747-744-feed 
     '(((7 3) - - - - -)
-      (- - (4 2) - (4 4) -)
+      (- - (7 0) - (4 4) -)
       (- (7 4) - -)
       (- - - (7 1) - (4 5))
-      ((4 0) - - -)
+      ((7 3) - - -)
       (- - (4 2) - (7 0) -)
       (- (7 2) - -)
-      (- - - (4 3) - (4 5))
+      (- - - (7 1) - (4 5))
       ((7 5) - - -)
       (- - (7 0) - (4 4) -)
-      (- (4 1) - -)
+      (- (7 2) - -)
       (- - - (4 3) - (7 1))))
   
   (define 777-feed 
@@ -334,17 +333,17 @@
       (- - - (6 2) - (6 4) - (4 7)))) ; d - To beat b
   
   (define 777-feed-3s-vs-takeouts
-    '(((7 3) - - - - - - -)
+    '(((7 3) - - - - - - (2 1))
       (- - (9 1) - (6 5) - - (2 6))
       (- (7 4) - -) ; a
-      (- - - (6 2) - (9 0) (5 0) -) 
+      (- - - (6 2) - (9 0) (2 6) -) 
       ((3 6) - - -) ; to d
-      (- - (6 3) - (6 5) - - -) ; c - To beat a
-      (- (7 2) - -)
+      (- - (6 3) - (6 5) - (1 6) -) ; c - To beat a
+      (- (7 2) - - - - (2 0) -)
       (- - - (9 0) - (6 4) (2 7) -)
       ((7 5) - - -)
-      (- - (6 3) - (9 1) - - (5 1))
+      (- - (6 3) - (9 1) - - (2 7))
       (- (3 7) - -) ; to c
-      (- - - (6 2) - (6 4) - -))) ; d - To beat b
+      (- - - (6 2) - (6 4) - (1 7)))) ; d - To beat b
   
   )
