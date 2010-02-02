@@ -1,7 +1,7 @@
 (module fourhss-converter scheme
-    (require srfi/1)
+    (require srfi/1 "sexp-converter.ss" "example-patterns.ss")
   
-  (provide 6hss->sexp 4hss->sexp 2hss->sexp sync-ss->sexp)
+  (provide 6hss->sexp 4hss->sexp 2hss->sexp sync-ss->sexp passing-ss->sexp)
   
   (define (2hss->sexp s)
     (let* ((ss-cleaned (regexp-replace* #px"\\s" s ""))
@@ -18,10 +18,7 @@
                                (list '- 
                                      (if (zero? throw) '- (list throw (if (even? throw) 1 0))))))
                          lst))
-                      '() full-throw-list (iota (length full-throw-list)))
-      ))
-  
-
+                      '() full-throw-list (iota (length full-throw-list)))))
   
   (define (4hss->sexp s)
     (let* ((ss-cleaned (regexp-replace* #px"\\s" s ""))
@@ -86,13 +83,6 @@
                    (if (= throw-hand 1) sexp-throw '-)
                    (if (= throw-hand 4) sexp-throw '-)
                    (if (= throw-hand 2) sexp-throw '-)
-                   (if (= throw-hand 5) sexp-throw '-))
-                  #;(list
-                   (if (= throw-hand 0) sexp-throw '-)
-                   (if (= throw-hand 3) sexp-throw '-)
-                   (if (= throw-hand 1) sexp-throw '-)
-                   (if (= throw-hand 4) sexp-throw '-)
-                   (if (= throw-hand 2) sexp-throw '-)
                    (if (= throw-hand 5) sexp-throw '-)))
                 lst))
              '() full-throw-list (iota (length full-throw-list)))))
@@ -116,16 +106,6 @@
                                 '()))
                              sexp-no-commas)))))
   
-  (define (passing-ss-throw-parts s)
-    (let* ((matches (regexp-match #px"^([0-9\\.]+)((?:p[0-9]?)?)(x?)" s))
-           (height (string->number (list-ref matches 1)))
-           (pass-matches (regexp-match #px"(p)((?:[0-9]+)?)" (list-ref matches 2)))
-           (pass? (if pass-matches #t #f))
-           (destination (match pass-matches 
-                          ((list _ _ (regexp #px"[0-9]+")) (string->number (list-ref pass-matches 2)))
-                          (_ 'no-destination)))           
-           (crossing? (regexp-match #px"x" (list-ref matches 3))))
-      (list height pass? destination crossing?)))
     
     ; Translate a sync throw
   ; <throw height><crossing><pass/pass destination>
@@ -152,22 +132,72 @@
                                     (sub1 reciever-same-hand))
                       reciever-same-hand))))))
  
-  
- 
-  (define (passing-ss->sexp passing-ss)
-    (let ((juggler-parts
-           (map (λ (juggler-part)
-                  (map passing-ss-throw-parts (regexp-split #px"\\s+" juggler-part))) 
-                (regexp-split #px"\\s*\\|\\s*" 
-                              (cadr (regexp-match #px"^\\s*<\\s*(.*)\\s*>\\s*$" passing-ss))))))
-      juggler-parts))
-                       
+  (define (passing-ss-throw-parts s)    
+    (let* ((matches (regexp-match #px"^([0-9\\.]+)((?:p[0-9]?)?)(x?)" s))
+           (height (string->number (list-ref matches 1)))
+           (pass-matches (regexp-match #px"(p)((?:[0-9]+)?)" (list-ref matches 2)))
+           (pass? (if pass-matches #t #f))
+           (destination (match pass-matches 
+                          ((list _ _ (regexp #px"[0-9]+")) (string->number (list-ref pass-matches 2)))
+                          (_ 'no-destination)))           
+           (crossing? (regexp-match #px"x" (list-ref matches 3))))
+      (list height pass? destination crossing?)))
     
-                
-        
-                                                   
-        
-  
+ ; for now, these can only be "async hands, right hand first, sync jugglers". sad face.
+  ; "No destination" passes go to the opposite juggler in a two juggler setup,
+  ; and to the 0th juggler in multiple juggler setups.
+  (define (passing-ss->sexp passing-ss)
+    (define (unscrew-throws juggler-throws)
+      (map 
+                (λ (beat)
+                  (apply append beat))
+                (apply map 
+                       (cons list juggler-throws
+                             ; This still just gives us two hand parts arranged by juggler
+                             ))))
+    
+    (let* ((juggler-parts
+           (map (λ (juggler-part)
+                  (let ((undoubled-juggler
+                         (map passing-ss-throw-parts (regexp-split #px"\\s+" juggler-part))))
+                    (if (odd? (length undoubled-juggler))
+                        (append undoubled-juggler undoubled-juggler)
+                        undoubled-juggler)))
+                (regexp-split #px"\\s*\\|\\s*" 
+                              (cadr (regexp-match #px"^\\s*<\\s*(.*)\\s*>\\s*$" passing-ss)))))
+                 ; First try: Both jugglers start right handed. Everything is straightforward
+           (juggler-throws (for/list ((juggler juggler-parts) (juggler-index (in-range 0 (length juggler-parts))))
+                     (for/list ((pss-throw juggler) (time (in-range 0 (length juggler))))
+                       (match-let (((list height pass? destination crossing?) pss-throw))
+                         (let* (
+                                (destination-juggler
+                                 (if pass?
+                                     (if (not (eq? destination 'no-destination))
+                                         (sub1 destination) ; destinations are 1-based
+                                         (if (= 2 (length juggler-parts))
+                                             ; Assume opposite juggler
+                                             (remainder (add1 juggler-index) 2)
+                                             (error "No destination given for pass"))) ; Assume feeder... Bleh
+                                     juggler-index))
+                                (throw
+                                 (list height 
+                                       (+ (* 2 destination-juggler)
+                                          (remainder
+                                           (+ (if (odd? time) 0 1)
+                                              (if (odd? height) 0 1))
+                                           2)))))
+                           (if (odd? time) 
+                               (list '- throw)
+                               (list throw '-))
+                           ))))))
+
+        (let ((try-this-sexp (unscrew-throws juggler-throws)))
+            (begin
+              (sexp->pattern try-this-sexp 0.25 0.20 (juggler-circle 
+                                                      (length (car try-this-sexp)) 5.0) 2)
+              try-this-sexp))
+          ))
+          
    (define throw-lengths
      #hash((#\0 . 0)
            (#\1 . 1)

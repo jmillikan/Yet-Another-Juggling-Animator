@@ -65,8 +65,10 @@
   (define (sexp->pattern-internal sexp-pattern beat-value dwell-value hands-lst hold-beats)    
     (define (build-segments current-hand current-throw)
       (let
-          ((throw-hand (list-ref hands-lst current-hand))
-           (catch-hand (list-ref hands-lst (cadr current-throw))))
+          ((throw-hand (with-handlers ((exn:fail:contract? (λ _ (error "Not enough jugglers/hands"))))
+                         (list-ref hands-lst current-hand)))
+           (catch-hand (with-handlers ((exn:fail:contract? (λ _ (error "Not enough jugglers/hands"))))
+                         (list-ref hands-lst (cadr current-throw)))))
         (cond ((and (= (car current-throw) hold-beats) ; Long dwell on at least SOME 2s. Will still look a bit funky.
                     (= current-hand (cadr current-throw))) 
                (begin 

@@ -1,6 +1,6 @@
 (module example-patterns scheme
   (require "juggling-core.ss" srfi/1)
-  (require "fourhss-converter.ss")
+  #;(require "fourhss-converter.ss")
   
   (provide (all-defined-out))
   
@@ -143,6 +143,15 @@
       "9a8 a89 999" ; PPS feed
       "aa7999" ; 3-man line (looks astonishingly accurate...)
       ))
+  
+  (define passing-ss-examples
+    '("<3p 3 3|3p 3 3>"
+      "<3p2 3 3p3 3|3p1 3 3 3|3 3 3p1 3>"
+      "<3p 3p 3 3|3p 3p 3 3>"
+      "<5p 3 3 3|3 3 5p 3>"
+      "<5p2 3 5p3 3|3 3 5p1 3|5p1 3 3 3>"
+      "<3p3 3p2 3|3 3p1 3|3p1 3 3>"
+      "<3p2 3p3 3p4|3p1 3 3 |3 3p1 3|3 3 3p1>"))
   
   (define syncss-examples
     '("(6x,4x)"

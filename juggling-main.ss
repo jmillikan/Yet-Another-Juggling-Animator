@@ -126,7 +126,11 @@
       (instantiate pattern-line% ("Scheme List" "0.25" "0.2" "" 
                                                 (λ (s) (eval (call-with-input-string s read) eval-namespace)) 2
                                                 get-hands w sexp-examples this))
-      (instantiate pattern-line% ("6-hand SS" "0.10" "0.08" "a" 6hss->sexp 6 get-hands w 6-ss-examples this))))
+      (instantiate pattern-line% ("6-hand SS" "0.10" "0.08" "a" 6hss->sexp 6 get-hands w 6-ss-examples this))
+      
+      
+      (instantiate pattern-line% ("Passing SS" "0.28" "0.20" "<3p 3 3|3p 3 3>" passing-ss->sexp 2 
+                                              get-hands w passing-ss-examples this))))
   
   (define (instantiate-view-controls c h)
     (let ((v (instantiate vertical-panel% (h) (alignment '(center center)) (stretchable-width #f) (min-width 200))))
