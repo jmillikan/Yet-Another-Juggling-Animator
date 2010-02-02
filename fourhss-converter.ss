@@ -147,17 +147,8 @@
   ; "No destination" passes go to the opposite juggler in a two juggler setup,
   ; and to the 0th juggler in multiple juggler setups.
   (define (passing-ss->sexp passing-ss)
-    (define (unscrew-throws juggler-throws)
-      (map 
-                (λ (beat)
-                  (apply append beat))
-                (apply map 
-                       (cons list juggler-throws
-                             ; This still just gives us two hand parts arranged by juggler
-                             ))))
-    
-    (let* ((juggler-parts
-           (map (λ (juggler-part)
+    (define (parse-passing-ss passing-ss)
+      (map (λ (juggler-part)
                   (let ((undoubled-juggler
                          (map passing-ss-throw-parts (regexp-split #px"\\s+" juggler-part))))
                     (if (odd? (length undoubled-juggler))
@@ -165,12 +156,31 @@
                         undoubled-juggler)))
                 (regexp-split #px"\\s*\\|\\s*" 
                               (cadr (regexp-match #px"^\\s*<\\s*(.*)\\s*>\\s*$" passing-ss)))))
-                 ; First try: Both jugglers start right handed. Everything is straightforward
-           (juggler-throws (for/list ((juggler juggler-parts) (juggler-index (in-range 0 (length juggler-parts))))
+    
+    
+    (define (unscrew-throws juggler-throws stagger-non1st-jugglers?)
+     (map 
+              (λ (beat)
+                (apply append beat))
+              (apply map 
+                     (cons list 
+                           (if stagger-non1st-jugglers?
+                               (append
+                                (list (car juggler-throws))
+                                (map (λ (j)
+                                       (append (drop j 1)
+                                               (take j 1)))
+                                     (cdr juggler-throws)))
+                               
+                               juggler-throws)
+                           ; This still just gives us two hand parts arranged by juggler
+                           ))))
+    
+    (define (convert-throws juggler-parts staggered-hands?)
+      (for/list ((juggler juggler-parts) (juggler-index (in-range 0 (length juggler-parts))))
                      (for/list ((pss-throw juggler) (time (in-range 0 (length juggler))))
                        (match-let (((list height pass? destination crossing?) pss-throw))
-                         (let* (
-                                (destination-juggler
+                         (let* ((destination-juggler
                                  (if pass?
                                      (if (not (eq? destination 'no-destination))
                                          (sub1 destination) ; destinations are 1-based
@@ -184,19 +194,29 @@
                                        (+ (* 2 destination-juggler)
                                           (remainder
                                            (+ (if (odd? time) 0 1)
-                                              (if (odd? height) 0 1))
+                                              (if (odd? height) 0 1)
+                                              (if (and pass? staggered-hands?) 1 0)
+                                              )
+                                           
                                            2)))))
                            (if (odd? time) 
                                (list '- throw)
                                (list throw '-))
-                           ))))))
-
-        (let ((try-this-sexp (unscrew-throws juggler-throws)))
-            (begin
+                           )))))
+    
+    (let* ((juggler-parts (parse-passing-ss passing-ss))           
+                 ; First try: Both jugglers start right handed, sync. Everything is straightforward
+           (juggler-throws (convert-throws juggler-parts #f))
+           (try-this-sexp (unscrew-throws juggler-throws #f)))
+            (with-handlers ((exn:fail? (λ _ 
+                                        (let* ((juggler-throws (convert-throws juggler-parts #t))
+                                               (try-this-sexp (unscrew-throws juggler-throws #t)))
+                                          (begin(sexp->pattern try-this-sexp 0.25 0.20 
+                                                               (juggler-circle (length (car try-this-sexp)) 5.0) 2)
+                                                try-this-sexp)))))                                            
               (sexp->pattern try-this-sexp 0.25 0.20 (juggler-circle 
                                                       (length (car try-this-sexp)) 5.0) 2)
-              try-this-sexp))
-          ))
+              try-this-sexp)))
           
    (define throw-lengths
      #hash((#\0 . 0)
