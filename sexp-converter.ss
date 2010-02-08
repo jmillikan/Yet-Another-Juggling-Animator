@@ -68,23 +68,39 @@
           ((throw-hand (with-handlers ((exn:fail:contract? (λ _ (error "Not enough jugglers/hands"))))
                          (list-ref hands-lst current-hand)))
            (catch-hand (with-handlers ((exn:fail:contract? (λ _ (error "Not enough jugglers/hands"))))
-                         (list-ref hands-lst (cadr current-throw)))))
+                         (list-ref hands-lst (cadr current-throw))))
+           (throw-length (car current-throw))
+           (throw-dest (cadr current-throw))
+           (throw-options (cddr current-throw)))
         (cond ((and (= (car current-throw) hold-beats) ; Long dwell on at least SOME 2s. Will still look a bit funky.
                     (= current-hand (cadr current-throw))) 
                (begin 
                  (list (hold-path-segment (* beat-value (car current-throw)) throw-hand))))
               (#t
-               (let ((orientation 
+               (let* ((orientation 
                       (if (= (floor (/ current-hand 2)) (floor (/ (cadr current-throw) 2))) 
                           'perpendicular ; pass! Paralell to throw line
-                          'parallel))) ; Hand to hand - perpendicular to throw line.
+                          'parallel))
+                     ; In the sexp format, these will have the "correct" throw length
+                     ; e.g. when they are thrown and rethrown
+                     ; and these options will fix appearance by modifying the dwell holds.
+                     (hurried? (has? throw-options 'hurry))                      
+                     (antihurried? (has? throw-options 'antihurry))
+                     
+                     ; Not sure how I'm going to do 0-count zips. Settle for half-beats?
+                     (dwell-length 
+                      (max 0 (cond ((and hurried? antihurried?) dwell-value)
+                                   (hurried? (- dwell-value beat-value))
+                                   (antihurried? (+ dwell-value beat-value))
+                                   (#t dwell-value))))
+                     (toss-length (- (* beat-value (car current-throw)) dwell-length)) 
+                     ) 
                  (list
-                  ; 1st dwell segment comes right after...
-                  (dwell-hold-path-segment dwell-value catch-hand throw-hand
-                                           (list 'orientation orientation))
-                  ; 1st toss segment
+                  ; These are reversed later... dwell segment comes after toss segment
+                  (dwell-hold-path-segment dwell-length catch-hand throw-hand
+                                           (list 'orientation orientation))                  
                   (ball-toss-path-segment 
-                   (- (* beat-value (car current-throw)) dwell-value) 
+                   toss-length
                    throw-hand catch-hand
                    (list 'orientation orientation))))))))
     
@@ -118,9 +134,8 @@
       (λ (o)
         (match o ((list delay _ first-throw throw-lst first-hand )
                   (let ((start-hand (list-ref hands-lst first-hand)))
-                    (make-path-state 0 (cons ; Initial dwell hold runs for the whole delay, which could be very slow and hilariously trippy in some cases.
-                                        ; These dwell holds are in the wrong hand, they're in the destination hand...
-                                        ; I didn't save the starting hand >_<
+                    (make-path-state 0 (cons 
+                                        ; Hold until the first throw we know of...
                                         (dwell-hold-path-segment (* delay beat-value) start-hand start-hand)
                                         (apply circular-list (reverse throw-lst))))))))
       ; horrible recursion...
@@ -183,24 +198,24 @@
   
   (define (throw-value throw)
     (match throw 
-      ((list value hand) value)
+      ((list-rest value hand options) value)
       ('- '-)
       ('* '-)))
   
   (define (advance-beat objects)
     (map 
      (λ (o) (match o 
-              ((list delay (list (? zero?) dest) _ _ h)
+              ((list delay (list-rest (? zero?) dest options) _ _ h)
                (error (format "Object starting in ~a did not reach destination hand ~a" h dest)))
-              ((list delay (list countdown dest) last-throw throw-list first-hand)
-               (list delay (list (sub1 countdown) dest) last-throw throw-list first-hand))
+              ((list delay (list-rest countdown dest options) last-throw throw-list first-hand)
+               (list delay (append (list (sub1 countdown) dest) options) last-throw throw-list first-hand))
               (_ o)))                     
      objects))                     
   
   (define (match-throw objects pattern-hand)
     (filter
      (lambda (o) (match o 
-                   ((list _ (list countdown object-hand)  _ _ _)
+                   ((list _ (list-rest countdown object-hand options)  _ _ _)
                     (and (= countdown 0) (= pattern-hand object-hand)))
                    (_ #f)))
      objects))
