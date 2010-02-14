@@ -93,7 +93,12 @@
                  
                  ; Ugh, at least now I can change this quickly
                  (throw-type (match (option options 'orientation)
-                               ('parallel (if backwards? 'backdrop 'pass))
+                               ('parallel 
+                                (if backwards? 'backdrop 
+                                    (match (option options 'throw-type)
+                                      ('normal 'pass)
+                                      ('tomahawk 'tomahawk)
+                                      )))
                                ('perpendicular 'self)
                                ('default 'unknown)))
                  
@@ -116,6 +121,7 @@
                   (make-rotation -90 
                                  (match throw-type
                                    ('pass angle-to-dest)
+                                   ('tomahawk a2-deg) ; CRAZY cheating. But it works!
                                    ; You can't throw a backdrop certain ways
                                    ; Well, I can't, anyhow.
                                    ('backdrop 
@@ -126,17 +132,29 @@
                  ; raise the catch point a bit for all throws
                  (catch-offset (match throw-type
                                  ('pass 0.8)
+                                 ('tomahawk 0.0)
                                  (_ 0.1)))
                  (throw-offset (match throw-type
-                                 ('pass -0.3)
+                                 ('tomahawk 1.0)
+                                 ('pass -0.3)                                 
                                  (_ -0.1)))       
                  (initial-rotation (match throw-type
                                      ('pass 60)
+                                     ('tomahawk 180)
                                      (_ 0)))
                  (extra-rotation (match throw-type
                                    ('pass 90)
+                                   ('tomahawk 0)
                                    ('backdrop (if (> 45 (angle-diff a1-deg a2-deg)) 10 180)) 
-                                   (_ 10))))
+                                   (_ 10)))
+                 
+                 ; Why are tomahawks spun correctly? It's really, really weird.
+                 #;(club-spin
+                  (match throw-type
+                    ('tomahawk -1)
+                    ('reverse -1)
+                    (_ 1)))
+                 )
       (make-path-segment 
        tf
        ; Solve for parametric function p(t) with gravity pulling negative on z
@@ -210,15 +228,22 @@
                  
                  ; Ugh, at least now I can change this quickly
                  (throw-type (match (option options 'orientation)
-                               ('parallel (if backwards? 'backdrop 'pass))
+                               ('parallel 
+                                (if backwards? 'backdrop 
+                                    (match (option options 'throw-type)
+                                      ('normal 'pass)
+                                      ('tomahawk 'tomahawk)
+                                      )))
                                ('perpendicular 'self)
                                ('default 'unknown)))
                  (catch-rotation (match throw-type
                                    ('pass 90)
+                                   ('tomahawk 0)
                                    (_ 10)))
                  ; raise the catch point a bit for all throws
                  (catch-offset (match throw-type
                                  ('pass 0.8)
+                                 ('tomahawk 0.0)
                                  (_ 0.1))))
       (make-path-segment
        tf

@@ -64,15 +64,19 @@
   
   (define (sexp->pattern-internal sexp-pattern beat-value dwell-value hands-lst hold-beats)    
     (define (build-segments current-hand current-throw)
-      (let
+      (let*
           ((throw-hand (with-handlers ((exn:fail:contract? (λ _ (error "Not enough jugglers/hands"))))
                          (list-ref hands-lst current-hand)))
            (catch-hand (with-handlers ((exn:fail:contract? (λ _ (error "Not enough jugglers/hands"))))
                          (list-ref hands-lst (cadr current-throw))))
            (throw-length (car current-throw))
            (throw-dest (cadr current-throw))
-           (throw-options (cddr current-throw)))
-        (cond ((and (= (car current-throw) hold-beats) ; Long dwell on at least SOME 2s. Will still look a bit funky.
+           (throw-options (cddr current-throw))
+           (throw-type
+            (cond 
+              ((has? throw-options 'tomahawk) 'tomahawk)
+              (#t 'normal))))
+        (cond ((and (<= (car current-throw) hold-beats) ; Long dwell on at least SOME 2s. Will still look a bit funky.
                     (= current-hand (cadr current-throw))) 
                (begin 
                  (list (hold-path-segment (* beat-value (car current-throw)) throw-hand))))
@@ -98,11 +102,12 @@
                  (list
                   ; These are reversed later... dwell segment comes after toss segment
                   (dwell-hold-path-segment dwell-length catch-hand throw-hand
-                                           (list 'orientation orientation))                  
+                                           (list 'orientation orientation) (list 'throw-type throw-type))                  
                   (ball-toss-path-segment 
                    toss-length
                    throw-hand catch-hand
-                   (list 'orientation orientation))))))))
+                   (list 'orientation orientation)
+                   (list 'throw-type throw-type))))))))
     
     ; There is funky, heavy duplication between this and update-object
     (define (start-object objects starting-object current-throw time current-hand)
