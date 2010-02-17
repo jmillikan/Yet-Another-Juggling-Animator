@@ -58,17 +58,14 @@
         ("Run" values-row (λ _ 
                       (with-handlers ((exn:fail? (λ (e) (send parent set-error (exn-message e)))))
                         (let*   
-                            ((hands (eval (call-with-input-string (send juggler-t get-text) read) eval-namespace))
+                            ((hands (eval-string (send juggler-t get-text)))
                              (beat-value (string->number (send input-beat get-value)))
                              (dwell-value (string->number (send input-dwell get-value)))
-                             (sexp-pattern (eval (call-with-input-string (send pattern-t get-text) read) eval-namespace))
+                             (sexp-pattern (eval-string (send pattern-t get-text)))
                              (pattern (sexp->pattern sexp-pattern beat-value dwell-value hands (string->number (send hold-beats get-value)))))
-                          (send parent show-pattern
-                                pattern
-                                hands)))))
+                          (send parent show-pattern pattern hands)))))
         (stretchable-width #f))
                                   
-      
       (define juggler-ec (new editor-canvas% [parent this] [line-count 4]))
       (define juggler-t (new text%))
       (send juggler-ec set-editor juggler-t)
@@ -79,11 +76,26 @@
       
       (define mb (new menu-bar% [parent this]))
       
-      (define m-edit (new menu% [label "Edit"] [parent mb]))
+      (define m-edit (new menu% [label "&Edit"] [parent mb]))
       (append-editor-operation-menu-items m-edit #t)
       
-      
-      ))
+      (define m-scheme (new menu% [label "&Scheme"] [parent mb]))
+      (instantiate menu-item% 
+        ("&Eval and replace"       
+         m-scheme
+         (λ _ 
+           (let*
+               ((active-editor (send (cond ((send juggler-ec has-focus?) juggler-ec)
+                       (#t pattern-ec)) get-editor))
+                (sel-start (send active-editor get-start-position))
+                (sel-end (send active-editor get-end-position))
+                
+                (result-string
+                  (format "~n(quote ~a)" (eval-string (send active-editor get-text sel-start sel-end)))))
+             (send active-editor insert result-string sel-end)
+             (send active-editor insert "#;" sel-start))
+                 
+           )))))
   
   ; Tab panels don't automatically change panels when clicked... You have to rig it up yourself. Awesome.
   (define pattern-forms% 
@@ -166,6 +178,9 @@
   ; For now, the stuff in the evals can see/do everything
   (define-namespace-anchor nsa)  
   (define eval-namespace (namespace-anchor->namespace nsa))
+  (define (eval-string s)
+    (eval (call-with-input-string s read) eval-namespace))
+    
   
   (define scheme-form% 
     (class* vertical-panel% ()
@@ -174,11 +189,11 @@
       
       (define hands-select (instantiate combo-field% ("Juggler/Hand List" hands-examples this) (min-width 250) (init-value "") (stretchable-width #t)))
       (define (get-hands)
-        (eval (call-with-input-string (send hands-select get-value) read) eval-namespace))
+        (eval-string (send hands-select get-value)))
       
       (define hold-length #f)
       (define sexp-line (instantiate pattern-line% ("Scheme List" "0.35" "0.3" "" 
-                                                (λ (s) (eval (call-with-input-string s read) eval-namespace)) 
+                                                (λ (s) (eval-string s)) 
                                                 (λ _ (string->number (send hold-length get-value)))
                                                 get-hands w sexp-examples this)))
       (set! hold-length  (instantiate text-field% ("H" sexp-line) (init-value "2")))
