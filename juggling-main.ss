@@ -24,6 +24,8 @@
         (send canvas set-pattern p)
         (send canvas set-jugglers j))
       
+      (define ed-win (instantiate editor-window% (this)))
+      
       (define pattern-forms (instantiate pattern-forms% (control-panel)))
       (instantiate-view-controls canvas control-panel)
       
@@ -31,6 +33,57 @@
         (send error-box set-value e))
       
       (define error-box (instantiate text-field% ("" this)))))
+  
+  (define editor-window%
+    (class* frame% ()
+      (inherit show)
+      (init-field parent)
+      (super-instantiate ("Pattern Editor" #f) (enabled #t) (width 600))
+      
+      #;(
+         Ripped from the docs for now.
+                )
+      
+      (send this show #t)
+      
+      (define values-row (instantiate horizontal-panel% (this)))
+      (define input-beat (instantiate text-field% ("Beat length" values-row) 
+                           (init-value  "0.32") (min-width 60) (stretchable-width #f)))
+      (define input-dwell (instantiate text-field% ("Dwell length" values-row) 
+                            (init-value  "0.28") (min-width 60) (stretchable-width #f)))
+      (define hold-beats (instantiate text-field% ("Hold Beats (max)" values-row) 
+                            (init-value  "2") (min-width 60) (stretchable-width #f)))
+      
+      (instantiate button% 
+        ("Run" values-row (λ _ 
+                      (with-handlers ((exn:fail? (λ (e) (send parent set-error (exn-message e)))))
+                        (let*   
+                            ((hands (eval (call-with-input-string (send juggler-t get-text) read) eval-namespace))
+                             (beat-value (string->number (send input-beat get-value)))
+                             (dwell-value (string->number (send input-dwell get-value)))
+                             (sexp-pattern (eval (call-with-input-string (send pattern-t get-text) read) eval-namespace))
+                             (pattern (sexp->pattern sexp-pattern beat-value dwell-value hands (string->number (send hold-beats get-value)))))
+                          (send parent show-pattern
+                                pattern
+                                hands)))))
+        (stretchable-width #f))
+                                  
+      
+      (define juggler-ec (new editor-canvas% [parent this] [line-count 4]))
+      (define juggler-t (new text%))
+      (send juggler-ec set-editor juggler-t)
+      
+      (define pattern-ec (new editor-canvas% [parent this] [line-count 20]))
+      (define pattern-t (new text%))
+      (send pattern-ec set-editor pattern-t)
+      
+      (define mb (new menu-bar% [parent this]))
+      
+      (define m-edit (new menu% [label "Edit"] [parent mb]))
+      (append-editor-operation-menu-items m-edit #t)
+      
+      
+      ))
   
   ; Tab panels don't automatically change panels when clicked... You have to rig it up yourself. Awesome.
   (define pattern-forms% 

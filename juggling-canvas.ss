@@ -44,10 +44,6 @@
       (define grid-size 100.0)
       (define grid-unit 1.0)
       
-      (define/public (run)
-        (set! step? #t)
-        (refresh))
-      
       (define/public (scale-time x)
         (if (number? x)
             (set! view-time-scale x)
@@ -295,13 +291,22 @@
       
       (define jugglers-static #f)
       
+      ; This is a bit odd, but it prevents the screen from repainting as fast as possible
+      ; cutting down on CPU time and allowing a 2nd window to actually get some cycles >_<
+      (define paint-queued? #f)
+      (instantiate timer% ((λ _ 
+                             (unless paint-queued?
+                               (set! paint-queued? #t)
+                               (send this refresh)))
+                           10)) ; max 100 fps... More than enough
+      
       (define/override (on-paint)
         (when internal-pattern
-          (when step? 
-            (let ((last-interval (- (current-milliseconds) last-ms)))              
-              (advance-pattern! internal-pattern (* view-time-scale (/ last-interval 1000))))
-            
-            (set! last-ms (current-milliseconds)))
+          (let ((last-interval (- (current-milliseconds) last-ms)))              
+            (advance-pattern! internal-pattern (* view-time-scale (/ last-interval 1000))))
+          
+          (set! last-ms (current-milliseconds))
+          
           (with-gl-context
            (lambda ()
              (gl-clear-color 0.0 0.0 0.0 0.0)
@@ -370,10 +375,9 @@
              (gl-pop-matrix)
              
              (swap-gl-buffers)
-             (gl-flush)))
-          (when step?
-            (set! step? #f)
-            (queue-callback (lambda x (send this run))))))
+             (set! paint-queued? #f)
+             ))))
+      
       
       (define (bisect a1 a2)
         (+ 180 (- (/ (+ a1 a2) 2))))
