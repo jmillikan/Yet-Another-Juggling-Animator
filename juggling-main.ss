@@ -5,6 +5,7 @@
            sgl
            sgl/gl-vectors
            srfi/1
+           mzlib/pconvert
            "juggling-core.ss"
            "sexp-converter.ss"
            "fourhss-converter.ss"
@@ -91,9 +92,13 @@
                 (sel-end (send active-editor get-end-position))
                 
                 (result-string
-                  (format "~n(quote ~a)" (eval-string (send active-editor get-text sel-start sel-end)))))
+                 (format "~n~a" 
+                         (pretty-format (print-convert 
+                                         (eval-string (send active-editor get-text sel-start sel-end)))))))
              (send active-editor insert result-string sel-end)
-             (send active-editor insert "#;" sel-start))
+             ; ... will this *always* work?
+             (send active-editor insert ")" sel-end)
+             (send active-editor insert "#;(" sel-start))
                  
            )))))
   
