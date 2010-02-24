@@ -6,6 +6,7 @@
            sgl/gl-vectors
            srfi/1
            mzlib/pconvert
+           browser
            "juggling-core.ss"
            "sexp-converter.ss"
            "fourhss-converter.ss"
@@ -32,20 +33,41 @@
       
       (define/public (set-error e)
         (send error-box set-value e))
+      (define mb (new menu-bar% [parent this]))
+       
+      (define show-editor #f)
+      
+      (define/public (editor-closed)
+        (set! show-editor #f)
+        (send mi-editor check #f))
+      
+      (define m-view (new menu% [label "&View"] [parent mb]))
+      (define mi-editor (instantiate checkable-menu-item% 
+        ("&Editor Window"       
+         m-view
+         (λ _ 
+           (set! show-editor (not show-editor))
+           (send ed-win show show-editor)
+           (send mi-editor check show-editor)))
+        (checked show-editor)))
+      
+      
+      
       
       (define error-box (instantiate text-field% ("" this)))))
   
   (define editor-window%
     (class* frame% ()
       (inherit show)
-      (init-field parent)
+      (init-field main-window)
       (super-instantiate ("Pattern Editor" #f) (enabled #t) (width 600))
       
       #;(
          Ripped from the docs for now.
                 )
       
-      (send this show #t)
+      (define/augment (on-close)
+        (send main-window editor-closed))
       
       (define values-row (instantiate horizontal-panel% (this)))
       (define input-beat (instantiate text-field% ("Beat length" values-row) 
@@ -57,14 +79,14 @@
       
       (instantiate button% 
         ("Run" values-row (λ _ 
-                      (with-handlers ((exn:fail? (λ (e) (send parent set-error (exn-message e)))))
+                      (with-handlers ((exn:fail? (λ (e) (send main-window set-error (exn-message e)))))
                         (let*   
                             ((hands (eval-string (send juggler-t get-text)))
                              (beat-value (string->number (send input-beat get-value)))
                              (dwell-value (string->number (send input-dwell get-value)))
                              (sexp-pattern (eval-string (send pattern-t get-text)))
                              (pattern (sexp->pattern sexp-pattern beat-value dwell-value hands (string->number (send hold-beats get-value)))))
-                          (send parent show-pattern pattern hands)))))
+                          (send main-window show-pattern pattern hands)))))
         (stretchable-width #f))
                                   
       (define juggler-ec (new editor-canvas% [parent this] [line-count 4]))
@@ -98,9 +120,7 @@
              (send active-editor insert result-string sel-end)
              ; ... will this *always* work?
              (send active-editor insert ")" sel-end)
-             (send active-editor insert "#;(" sel-start))
-                 
-           )))))
+             (send active-editor insert "#;(" sel-start)))))))
   
   ; Tab panels don't automatically change panels when clicked... You have to rig it up yourself. Awesome.
   (define pattern-forms% 
@@ -186,7 +206,6 @@
   (define (eval-string s)
     (eval (call-with-input-string s read) eval-namespace))
     
-  
   (define scheme-form% 
     (class* vertical-panel% ()
       (init-field parent)
