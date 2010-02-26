@@ -19,8 +19,8 @@
                   (+ a pi))))
  
   (define pair-of-hands
-    (list (make-hand (make-position 0.35 0 1.0) (make-position 0.60 -0.05 1.1) (* pi -5/12))
-          (make-hand (make-position -0.35 0 1.0) (make-position -0.60 -0.05 1.1) (* pi -7/12))))
+    (list (make-hand (make-position 0.3 0 1.0) (make-position 0.60 -0.05 1.1) (* pi -5/12))
+          (make-hand (make-position -0.3 0 1.0) (make-position -0.60 -0.05 1.1) (* pi -7/12))))
   (define j pair-of-hands)
   
   (define pair-of-jugglers 
@@ -38,8 +38,7 @@
   (define (juggler-circle n r)
       (apply append
              (for/list ((i (in-range 0 (- 2pi (/ 2pi (* n 2))) (/ 2pi n))))
-               (rotate-hands (translate-hands pair-of-hands 0 (- r) 0) i)
-               #;(list (angle-hand (- i (/ pi (* 4 r))) r 'left) (angle-hand (+ i (/ pi (* 4 r))) r 'right)))))
+               (rotate-hands (translate-hands pair-of-hands 0 (- r) 0) i))))
   
   (define (juggler-line n space angle) ; Jugglers from 0,0 in a line along angle 0 facing toward "angle"
     (apply append

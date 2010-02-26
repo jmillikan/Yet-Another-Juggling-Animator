@@ -98,6 +98,7 @@
       "#;(600 juggler 3-count - Slow) (3-count 600 3)"
       "#;(5-club feed, 10 feedees) (typewriter-feed 11 2 5)"
       "#;(7-club singles) '(((11 3) - - -) () (- (10 0)) (- - (11 1)) () (- - - (10 2)))"
+      "#;(9-club doubles?) '(((17 3) - - -) () (- (10 0)) (- - (17 1)) () (- - - (10 2)))"
       "#;(Some 3/4 man 747-ish feeds) 747-feed"
       "777-feed"
       "777-747-744-feed "

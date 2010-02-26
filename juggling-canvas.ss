@@ -149,6 +149,8 @@
            (gl-enable 'lighting)
            (gl-enable 'light0)
            (gl-enable 'depth-test)
+           (gl-enable 'blend)
+           (gl-blend-func 'src-alpha 'one-minus-src-alpha)
            
            (unless internal-pattern
              (set! quadric (gl-new-quadric))
@@ -280,13 +282,13 @@
             
             (error "Internal failure: That's really just not a pattern.~n")))
       
-      (define/public (set-jugglers j)
+      (define/public (set-jugglers j set-warning)
         #;(set! jugglers (jugglers-lambda j))
         (with-gl-context
          (lambda ()
            (set! jugglers-static (gl-gen-lists 1))
            (gl-new-list jugglers-static 'compile)          
-           ((jugglers-lambda j))
+           ((jugglers-lambda j set-warning))
            (gl-end-list))))
       
       (define jugglers-static #f)
@@ -385,11 +387,65 @@
       ; Create a lambda rendering hand positions for a list of hands.
       ; Right now, it's approximated by drawing a figure between hand pairs.
       
-      (define (jugglers-lambda hands-lst)
-        (lambda ()       
-          (let loop-pairs ((lst hands-lst))
+      (define (butt-distance p1 p2)
+        (sqrt (+ (expt (- (position-x p1) (position-x p2)) 2)
+                 (expt (- (position-y p1) (position-y p2)) 2)
+                 (expt (- (position-z p1) (position-z p2)) 2))))
+      
+      (define (butt-collisions hands-lst)
+        (let ((butt-positions
+               (let loop-pairs ((lst hands-lst) (centers '()))
+                 (match lst
+                   ((list-rest (struct hand ((struct position (x1 y1 z1)) c1 a1)) 
+                               (struct hand ((struct position (x2 y2 z2)) c2 a2)) 
+                               rest)
+                    (let*
+                        ((x-center (/ (+ x1 x2) 2))
+                         (y-center (/ (+ y1 y2) 2))
+                         (z-center (- (/ (+ z1 z2) 2) 1.0))
+                         (l1 (rotate (make-position -0.5 0.0 0.0) a1))
+                         (l2 (rotate (make-position -0.5 0.0 0.0) a2))
+                         (butt-center
+                          (begin
+                            #;(display (format "l1: ~a~nl2: ~a~n" l1 l2))
+                            (make-position
+                             (+ x-center (position-x l1) (position-x l2))
+                             (+ y-center (position-y l1) (position-y l2))
+                             z-center))))
+                         
+                      
+                      (begin
+                        (loop-pairs rest (cons butt-center centers)))))
+                   (_ centers)))))
+          
+          (find values
+                (map
+                 (λ (p1)
+                   (find values
+                         (map
+                          (λ (p2)
+                            #;(display (format "Looking for collisions at ~a and ~a~n" p1 p2))
+                            (if (and (not (eq? p1 p2))(< (butt-distance p1 p2) 0.3))
+                                (begin 
+                                  #;(display (format "Collision found~n"))
+                       `(collision ,p1 ,p2))
+                                #f))
+                          butt-positions)))
+                 butt-positions))))
+      
+      (define show-butt-collisions? #t)
+      
+      (define (set-butt-collisions b)
+        (set! show-butt-collisions? b))
+      
+      (define (jugglers-lambda hands-lst set-warning)
+        (lambda ()     
+          
+          (let loop-pairs ((lst hands-lst) (centers '()))
             (match lst
-              ((list-rest (struct hand ((struct position (x1 y1 z1)) c1 a1)) (struct hand ((struct position (x2 y2 z2)) c2 a2)) rest)
+              ((list-rest (struct hand ((struct position (x1 y1 z1)) c1 a1)) 
+                          (struct hand ((struct position (x2 y2 z2)) c2 a2)) 
+                          rest)
                (let*
                    ((x-center (/ (+ x1 x2) 2))
                     (y-center (/ (+ y1 y2) 2))
@@ -410,7 +466,28 @@
                    ; (That's all of it right now)
                    
                    (gl-pop-matrix)
-                   (loop-pairs rest))))
-              (_ '())))))
+                   (loop-pairs rest (cons (make-position x-center y-center z-center) centers)))))
+              (_ centers)))
+            
+          (if show-butt-collisions?
+              (match (butt-collisions hands-lst)
+                ((list collision (struct position (x1 y1 z1))
+                       (struct position (x2 y2 z2)))
+                 (begin
+                   #;(display (format "Showing butt collisions at ~a,~a,~a~n" x1 y1 z1))
+                   (set-warning (format "Butt collision detected at around ~a,~a,~a! Shown in red." x1 y1 z1))
+                   (gl-push-matrix)
+                   (gl-translate x1 y1 (+ 0.9 z1))
+                   (gl-material-v 'front-and-back
+                         'ambient-and-diffuse
+                         (vector->gl-float-vector (vector 0.9 0.2 0.2 0.5)))
+                   (gl-sphere quadric 0.5 10 10)
+                   (gl-pop-matrix)))
+                
+                (_ #f #;(display (format "Found no collisions. ~a~n" (butt-collisions hands-lst)))))
+                    
+                    
+              #f)
+          ))
       
       (super-instantiate () (style '(gl no-autoclear))))))

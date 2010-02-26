@@ -26,7 +26,10 @@
       
       (define/public (show-pattern p j)
         (send canvas set-pattern p)
-        (send canvas set-jugglers j))
+        (send canvas set-jugglers j
+              ; allow jugglers-lambda or related functions to throw warnings about juggler placement...
+              (λ (s) (send this set-error s))
+              ))
       
       (define ed-win (instantiate editor-window% (this)))
       
