@@ -6,9 +6,11 @@
            sgl/gl-vectors
            srfi/1
            mzlib/pconvert
-           browser
+           browser/htmltext
+           
            "juggling-core.ss"
            "sexp-converter.ss"
+           "pattern-utilities.ss"
            "fourhss-converter.ss"
            "example-patterns.ss"
            "juggling-canvas.ss")
@@ -18,7 +20,7 @@
     (class* frame% ()
       (inherit show)
       (super-instantiate ("Juggling Animator" #f))
-      (define canvas (instantiate juggling-canvas% (this) (min-width 600) (min-height 400)))
+      (define canvas (instantiate juggling-canvas% (this) (min-width 600) (min-height 450)))
       (define control-panel (instantiate horizontal-panel% (this)
                               (alignment '(center center)) (stretchable-height #f) (min-height 150)))
       
@@ -34,7 +36,7 @@
       (define/public (set-error e)
         (send error-box set-value e))
       (define mb (new menu-bar% [parent this]))
-       
+      
       (define show-editor #f)
       
       (define/public (editor-closed)
@@ -43,16 +45,13 @@
       
       (define m-view (new menu% [label "&View"] [parent mb]))
       (define mi-editor (instantiate checkable-menu-item% 
-        ("&Editor Window"       
-         m-view
-         (λ _ 
-           (set! show-editor (not show-editor))
-           (send ed-win show show-editor)
-           (send mi-editor check show-editor)))
-        (checked show-editor)))
-      
-      
-      
+                          ("&Editor Window"       
+                           m-view
+                           (λ _ 
+                             (set! show-editor (not show-editor))
+                             (send ed-win show show-editor)
+                             (send mi-editor check show-editor)))
+                          (checked show-editor)))
       
       (define error-box (instantiate text-field% ("" this)))))
   
@@ -75,20 +74,20 @@
       (define input-dwell (instantiate text-field% ("Dwell length" values-row) 
                             (init-value  "0.28") (min-width 60) (stretchable-width #f)))
       (define hold-beats (instantiate text-field% ("Hold Beats (max)" values-row) 
-                            (init-value  "2") (min-width 60) (stretchable-width #f)))
+                           (init-value  "2") (min-width 60) (stretchable-width #f)))
       
       (instantiate button% 
         ("Run" values-row (λ _ 
-                      (with-handlers ((exn:fail? (λ (e) (send main-window set-error (exn-message e)))))
-                        (let*   
-                            ((hands (eval-string (send juggler-t get-text)))
-                             (beat-value (string->number (send input-beat get-value)))
-                             (dwell-value (string->number (send input-dwell get-value)))
-                             (sexp-pattern (eval-string (send pattern-t get-text)))
-                             (pattern (sexp->pattern sexp-pattern beat-value dwell-value hands (string->number (send hold-beats get-value)))))
-                          (send main-window show-pattern pattern hands)))))
+                            (with-handlers ((exn:fail? (λ (e) (send main-window set-error (exn-message e)))))
+                              (let*   
+                                  ((hands (eval-string (send juggler-t get-text)))
+                                   (beat-value (string->number (send input-beat get-value)))
+                                   (dwell-value (string->number (send input-dwell get-value)))
+                                   (sexp-pattern (eval-string (send pattern-t get-text)))
+                                   (pattern (sexp->pattern sexp-pattern beat-value dwell-value hands (string->number (send hold-beats get-value)))))
+                                (send main-window show-pattern pattern hands)))))
         (stretchable-width #f))
-                                  
+      
       (define juggler-ec (new editor-canvas% [parent this] [line-count 4]))
       (define juggler-t (new text%))
       (send juggler-ec set-editor juggler-t)
@@ -109,7 +108,7 @@
          (λ _ 
            (let*
                ((active-editor (send (cond ((send juggler-ec has-focus?) juggler-ec)
-                       (#t pattern-ec)) get-editor))
+                                           (#t pattern-ec)) get-editor))
                 (sel-start (send active-editor get-start-position))
                 (sel-end (send active-editor get-end-position))
                 
@@ -205,7 +204,7 @@
   (define eval-namespace (namespace-anchor->namespace nsa))
   (define (eval-string s)
     (eval (call-with-input-string s read) eval-namespace))
-    
+  
   (define scheme-form% 
     (class* vertical-panel% ()
       (init-field parent)
@@ -217,16 +216,16 @@
       
       (define hold-length #f)
       (define sexp-line (instantiate pattern-line% ("Scheme List" "0.35" "0.3" "" 
-                                                (λ (s) (eval-string s)) 
-                                                (λ _ (string->number (send hold-length get-value)))
-                                                get-hands w sexp-examples this)))
+                                                                  (λ (s) (eval-string s)) 
+                                                                  (λ _ (string->number (send hold-length get-value)))
+                                                                  get-hands w sexp-examples this)))
       (set! hold-length  (instantiate text-field% ("H" sexp-line) (init-value "2")))
       
       (instantiate pattern-line% ("6-hand SS" "0.10" "0.08" "a" 6hss->sexp (λ _ 6) get-hands w 6-ss-examples this))
       
       
       (instantiate pattern-line% ("Passing SS" "0.28" "0.20" "<3p 3 3|3p 3 3>" passing-ss->sexp (λ _ 2) 
-                                              get-hands w passing-ss-examples this))))
+                                               get-hands w passing-ss-examples this))))
   
   (define (instantiate-view-controls c h)
     (let ((v (instantiate vertical-panel% (h) (alignment '(center center)) (stretchable-width #f) (min-width 200))))

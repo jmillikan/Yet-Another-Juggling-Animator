@@ -1,5 +1,5 @@
 (module fourhss-converter scheme
-    (require srfi/1 "sexp-converter.ss" "example-patterns.ss")
+    (require srfi/1 "sexp-converter.ss" "pattern-utilities.ss")
   
   (provide 6hss->sexp 4hss->sexp 2hss->sexp sync-ss->sexp passing-ss->sexp)
   
