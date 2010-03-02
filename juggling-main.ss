@@ -6,7 +6,6 @@
            sgl/gl-vectors
            srfi/1
            mzlib/pconvert
-           browser/htmltext
            
            "juggling-core.ss"
            "sexp-converter.ss"
@@ -42,6 +41,9 @@
       
       (define show-editor #f)
       
+      
+      
+      
       (define/public (editor-closed)
         (set! show-editor #f)
         (send mi-editor check #f))
@@ -55,6 +57,18 @@
                              (send ed-win show show-editor)
                              (send mi-editor check show-editor)))
                           (checked show-editor)))
+      
+      (define show-butt-collisions #f)
+      
+      (define mi-butt-collisions (instantiate checkable-menu-item%
+                                   ("Butt proximity warnings"
+                                    m-view
+                                    (λ _
+                                      (set! show-butt-collisions (not show-butt-collisions))
+                                      (send canvas set-butt-collisions show-butt-collisions)
+                                      (send mi-butt-collisions check show-butt-collisions)))
+                                   (checked show-butt-collisions)))
+                                      
       
       (define error-box (instantiate text-field% ("" this)))))
   

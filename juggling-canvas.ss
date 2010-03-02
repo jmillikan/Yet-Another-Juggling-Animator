@@ -435,7 +435,7 @@
       
       (define show-butt-collisions? #t)
       
-      (define (set-butt-collisions b)
+      (define/public (set-butt-collisions b)
         (set! show-butt-collisions? b))
       
       (define (jugglers-lambda hands-lst set-warning)
