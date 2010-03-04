@@ -1,6 +1,6 @@
 (module sexp-converter scheme
   (require srfi/1)
-  (require "juggling-core.ss")
+  (require "juggling-core.ss" "pattern-utilities.ss")
   
   (provide 
    sexp->pattern)
@@ -63,26 +63,23 @@
       (three-or-less-hands three-or-less-hands)))
   
   (define (sexp->pattern-internal sexp-pattern beat-value dwell-value hands-lst hold-beats)    
-    (define (build-segments current-hand current-throw)
+    (define (build-segments current-hand throw-dest throw-length throw-options)
       (let*
           ((throw-hand (with-handlers ((exn:fail:contract? (λ _ (error "Not enough jugglers/hands"))))
                          (list-ref hands-lst current-hand)))
            (catch-hand (with-handlers ((exn:fail:contract? (λ _ (error "Not enough jugglers/hands"))))
-                         (list-ref hands-lst (cadr current-throw))))
-           (throw-length (car current-throw))
-           (throw-dest (cadr current-throw))
-           (throw-options (cddr current-throw))
+                         (list-ref hands-lst throw-dest)))
            (throw-type
             (cond 
               ((has? throw-options 'tomahawk) 'tomahawk)
               (#t 'normal))))
-        (cond ((and (<= (car current-throw) hold-beats) ; Long dwell on at least SOME 2s. Will still look a bit funky.
-                    (= current-hand (cadr current-throw))) 
+        (cond ((and (<= throw-length hold-beats) ; Long dwell on at least SOME 2s. Will still look a bit funky.
+                    (= current-hand throw-dest)) 
                (begin 
-                 (list (hold-path-segment (* beat-value (car current-throw)) throw-hand))))
+                 (list (hold-path-segment (* beat-value throw-length) throw-hand))))
               (#t
                (let* ((orientation 
-                      (if (= (floor (/ current-hand 2)) (floor (/ (cadr current-throw) 2))) 
+                      (if (= (floor (/ current-hand 2)) (floor (/ throw-dest 2))) 
                           'perpendicular ; pass! Paralell to throw line
                           'parallel))
                      ; In the sexp format, these will have the "correct" throw length
@@ -97,25 +94,25 @@
                                    (hurried? (- dwell-value beat-value))
                                    (antihurried? (+ dwell-value beat-value))
                                    (#t dwell-value))))
-                     (toss-length (- (* beat-value (car current-throw)) dwell-length)) 
+                     (toss-length (- (* beat-value throw-length) dwell-length)) 
                      ) 
-                 (list
-                  ; These are reversed later... dwell segment comes after toss segment
-                  (dwell-hold-path-segment dwell-length catch-hand throw-hand
-                                           (list 'orientation orientation) (list 'throw-type throw-type))                  
+                 (list    
                   (ball-toss-path-segment 
                    toss-length
                    throw-hand catch-hand
                    (list 'orientation orientation)
-                   (list 'throw-type throw-type))))))))
+                   (list 'throw-type throw-type))
+                  (dwell-hold-path-segment dwell-length catch-hand throw-hand
+                                           (list 'orientation orientation) (list 'throw-type throw-type))              ))))))
     
-    ; There is funky, heavy duplication between this and update-object
+    ; Update objects, tacking on throw length and destination
     (define (start-object objects starting-object current-throw time current-hand)
       (let ((new-object
              (list time ; delay
                    current-throw ; next-throw, counted down
                    current-throw ; last throw, tested with eq? for identity
-                   (build-segments current-hand current-throw)
+                   ; Each entry is from-hand to-hand height option-list
+                   `((,current-hand ,(cadr current-throw) ,(car current-throw) ,(cddr current-throw)))
                    current-hand))) ; first hand, for use later
         (values #f (replace eq? objects starting-object new-object))))    
     
@@ -131,7 +128,18 @@
                      (replace 
                       eq? objects object-matching-throw                              
                       (list delay current-throw last-throw 
-                            (append (build-segments current-hand current-throw) throw-list) first-hand)))))))
+                            (cons `(,current-hand ,(cadr current-throw) ,(car current-throw) ,(cddr current-throw)) throw-list) first-hand)))))))
+    
+    ; list of throw/hold segments, starting with the first throw
+    ; TODO: build-segments recieves and uses PREVIOUS throw info...
+    (define (build-loop-segments throw-lst)
+      (let loop-throws ((throw-rest throw-lst))
+        (if (null? throw-rest) '()
+            (append
+             (match-let 
+                 (((list from-hand to-hand length options) (car throw-rest)))
+               (build-segments from-hand to-hand length options))
+             (loop-throws (cdr throw-rest))))))
     
     (make-pattern
      ; Do something uncomplicated with the results of this horrible recursion...
@@ -142,7 +150,9 @@
                     (make-path-state 0 (cons 
                                         ; Hold until the first throw we know of...
                                         (dwell-hold-path-segment (* delay beat-value) start-hand start-hand)
-                                        (apply circular-list (reverse throw-lst))))))))
+                                        (apply circular-list 
+                                               (build-loop-segments
+                                                (reverse throw-lst)))))))))
       ; horrible recursion...
       (let* ((c-pattern (apply circular-list sexp-pattern))
              (number-of-hands (length (car c-pattern)))
@@ -169,13 +179,10 @@
                           (if (not (eq? value '-)) 
                               ; There's a throw that no object expected.
                               (if (null? unstarted-objects)
-                                  ; and no object is waiting to be started...
-                                  
                                   ; This COULD be a throw past the end of an object's cycle. Ugh.
                                   ; I'd like to be able to throw errors here, but I'm pretty sure that the error would show up elsewhere eventually.
                                   (loop-throws time unfinished-objects c-pattern objects (cdr throws-this-beat) (add1 hand))
                                   ; ...or start first available object.
-                                  ; objects starting-object current-throw time beat-value current-hand hand-lst
                                   (let-values ((( finished updated-objects) 
                                                 (start-object objects (car unstarted-objects) current-throw time hand)))
                                     (loop-throws time 
