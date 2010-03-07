@@ -33,6 +33,11 @@
       "9a8 999 a89 999" ; 4-count feed
       "9a8 a89 999" ; PPS feed
       "aa7999" ; 3-man line (looks astonishingly accurate...)
+      
+      ; Some patterns from Luke from Madison
+      "a8999" ; 
+      "c99aa" ;
+      
       ))
   
   ; Incorrect support for a subset of Passing SS
@@ -67,6 +72,18 @@
       "#;(3-count) '(* ((3 3) - (3 1) -) (- (3 0) - (3 2)) ((3 1) - (3 3) -))"
       "#;(3-count with tomahawks) '(* ((3 3 tomahawk) - (3 1) -) (- (3 0) - (3 2)) ((3 1) - (3 3) -))"
       "#;(Jim's 3-count) '(* ((3 3) - (3 0) -) ((3 1) - - (4 2 antihurry)) (- (3 0) (2 3 hurry) -) ((3 3) - - (3 1)) (- (4 0 antihurry) - (3 2)) ((2 1 hurry) - (3 3) -))"
+      "#;(Mild Madness) `(*  
+((3 3) - (3 0) -)
+((1 1) (3 2) - (3 1))
+(- (3 0) (2 3 hurry) -)
+((3 3) - - (3 1))
+(- (3 2) (3 0) (1 2))
+((2 1 hurry) - (3 3) -)
+)"
+      "#;(PPS) 
+'(((3 3) - (3 1) -)
+(- (3 2) - (3 0))
+((3 1) - (3 3) -))"
       "'(* ((4 0) (2 0)) (- -)) ; box"
       "'(* ((8 0) (2 0)) (- -) ((4 0) (2 0)) (- -)) ; 4-ball box"
       "'(* ((4 0) (2 0)) (- -) ((2 1) (4 0)) (- -)) ; shower box"
@@ -105,6 +122,7 @@
       "777-feed-3s"
       "777-feed-3s-vs-744"
       "777-feed-3s-vs-takeouts"
+      "#;(10 club  ultimate triangle, all crossing) (reorder-throws (6hss->sexp \"a\") '(0 2 4 1 3 5) '(0 3 4 1 2 5))"
       ))
    
   
