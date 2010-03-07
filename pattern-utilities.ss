@@ -122,4 +122,41 @@
                    ; self beat(s)
                    (for/list ((j (in-range 1 count)))
                      (sync (* n 2) objects (if (even? j) 1 -1) (if (even? j) even? odd?)))))
-                (iota (sub1 n)))))))
+                (iota (sub1 n))))))
+  
+  ; Change the order of hands. The *order* of the reordering is the new order of throws.
+  ; The *numbers* in the reordering are hands in the order of R1, L1, R2, L2...
+  
+  ; Assumes you knew how many throws were there in the first place...
+  (define (reorder-throws sexp old-ordering ordering)
+    (let loop-beats ((sexp-rest sexp) (t 0))
+      (if (null? sexp-rest) '()
+          (cons
+           (match-let* ((beat (begin
+                          (display (format "Beat: ~a~nt:~a~n" (car sexp-rest) t))
+                          (car sexp-rest)))
+                  (old-hand (list-ref old-ordering t))
+                  (new-hand (list-ref ordering t))
+                  ((list-rest len dest options) (list-ref beat old-hand))
+                  (new-dest
+                   ; really slow.
+                   (let loop-orderings ((old-rest old-ordering) (new-rest ordering) (i 0))
+                     (if (null? old-rest) 'flagrant-error
+                         (if (= dest (list-ref old-ordering i)) (list-ref ordering i) (loop-orderings (cdr old-rest) (cdr new-rest) (add1 i))))))
+                  (new-throw (cons len (cons new-dest options))))
+                  
+             
+             (let loop-hands ((h 0))
+               (if (< h (length ordering))
+                   (cons
+                    (if (= h new-hand)
+                        new-throw
+                        '-)
+                    (loop-hands (add1 h))
+                    )
+                   '()
+                   )))
+           (loop-beats (cdr sexp-rest)
+                       (if (< (add1 t) (length ordering)) (add1 t)
+                           0))))))
+  )
