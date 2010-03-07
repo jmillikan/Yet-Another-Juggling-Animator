@@ -1,6 +1,6 @@
 (module sexp-converter scheme
   (require srfi/1)
-  (require "juggling-core.ss" "pattern-utilities.ss")
+  (require "juggling-core.ss")
   
   (provide 
    sexp->pattern)
@@ -62,33 +62,44 @@
                             (+ (remainder (+ hand 2) 4) (floor (/ hand 4))) rest)))
       (three-or-less-hands three-or-less-hands)))
   
+  (define (deref-hand h lst)
+    (with-handlers ((exn:fail:contract? (λ _ (error "Not enough jugglers/hands"))))
+                         (list-ref lst h)))
+  
   (define (sexp->pattern-internal sexp-pattern beat-value dwell-value hands-lst hold-beats)    
-    (define (build-segments current-hand throw-dest throw-length throw-options)
+    (define (build-segments throw-hand-i catch-hand-i next-hand-i throw-length throw-options next-options)
       (let*
-          ((throw-hand (with-handlers ((exn:fail:contract? (λ _ (error "Not enough jugglers/hands"))))
-                         (list-ref hands-lst current-hand)))
-           (catch-hand (with-handlers ((exn:fail:contract? (λ _ (error "Not enough jugglers/hands"))))
-                         (list-ref hands-lst throw-dest)))
+          ((throw-hand (deref-hand throw-hand-i hands-lst))
+           (catch-hand (deref-hand catch-hand-i hands-lst))
+           (next-hand (deref-hand next-hand-i hands-lst)) ; one hand into the future for the dwell hold...
            (throw-type
+            (cond 
+              ((has? throw-options 'tomahawk) 'tomahawk)
+              (#t 'normal)))
+           
+           (next-throw-type
             (cond 
               ((has? throw-options 'tomahawk) 'tomahawk)
               (#t 'normal))))
         (cond ((and (<= throw-length hold-beats) ; Long dwell on at least SOME 2s. Will still look a bit funky.
-                    (= current-hand throw-dest)) 
+                    (= throw-hand-i catch-hand-i)) 
                (begin 
-                 (list (hold-path-segment (* beat-value throw-length) throw-hand))))
+                 (list (hold-path-segment (* beat-value throw-length) throw-hand '()))))
               (#t
                (let* ((orientation 
-                      (if (= (floor (/ current-hand 2)) (floor (/ throw-dest 2))) 
-                          'perpendicular ; pass! Paralell to throw line
-                          'parallel))
+                       (if (= (floor (/ throw-hand-i 2)) (floor (/ catch-hand-i 2))) 
+                           'perpendicular ; pass! Paralell to throw line
+                           'parallel))
+                      (next-orientation 
+                       (if (= (floor (/ catch-hand-i 2)) (floor (/ next-hand-i 2))) 
+                           'perpendicular ; pass! Paralell to throw line
+                           'parallel))
                      ; In the sexp format, these will have the "correct" throw length
                      ; e.g. when they are thrown and rethrown
                      ; and these options will fix appearance by modifying the dwell holds.
                      (hurried? (has? throw-options 'hurry))                      
                      (antihurried? (has? throw-options 'antihurry))
                      
-                     ; Not sure how I'm going to do 0-count zips. Settle for half-beats?
                      (dwell-length 
                       (max 0 (cond ((and hurried? antihurried?) dwell-value)
                                    (hurried? (- dwell-value beat-value))
@@ -100,10 +111,13 @@
                   (ball-toss-path-segment 
                    toss-length
                    throw-hand catch-hand
-                   (list 'orientation orientation)
-                   (list 'throw-type throw-type))
-                  (dwell-hold-path-segment dwell-length catch-hand throw-hand
-                                           (list 'orientation orientation) (list 'throw-type throw-type))              ))))))
+                   `((orientation ,orientation)
+                     (throw-type ,throw-type)))
+                  (dwell-hold-path-segment dwell-length catch-hand throw-hand next-hand
+                                           `((orientation ,orientation)
+                                             (throw-type ,throw-type))
+                                           `((orientation ,next-orientation)
+                                             (throw-type ,next-throw-type)))))))))
     
     ; Update objects, tacking on throw length and destination
     (define (start-object objects starting-object current-throw time current-hand)
@@ -137,8 +151,9 @@
         (if (null? throw-rest) '()
             (append
              (match-let 
-                 (((list from-hand to-hand length options) (car throw-rest)))
-               (build-segments from-hand to-hand length options))
+                 (((list from-hand to-hand length options) (car throw-rest))
+                  ((list _ next-hand next-length next-options) (if (null? (cdr throw-rest)) (car throw-lst) (cadr throw-rest))))
+               (build-segments from-hand to-hand next-hand length options next-options))
              (loop-throws (cdr throw-rest))))))
     
     (make-pattern
@@ -149,7 +164,7 @@
                   (let ((start-hand (list-ref hands-lst first-hand)))
                     (make-path-state 0 (cons 
                                         ; Hold until the first throw we know of...
-                                        (dwell-hold-path-segment (* delay beat-value) start-hand start-hand)
+                                        (dwell-hold-path-segment (* delay beat-value) start-hand start-hand start-hand '() '()) ; >_< TODO: Replace last start-hand with first destination hand...
                                         (apply circular-list 
                                                (build-loop-segments
                                                 (reverse throw-lst)))))))))

@@ -79,8 +79,20 @@
     (min (abs (- a1 a2))
          (abs (- (+ 360 (min a1 a2)) (max a1 a2)))))
   
+  
+  (define (get-throw-type options backwards?)
+    (match (option options 'orientation)
+      ('parallel 
+       (if backwards? 'backdrop 
+           (match (option options 'throw-type)
+             ('normal 'pass)
+             ('tomahawk 'tomahawk)
+             )))
+      ('perpendicular 'self)
+      ('default 'unknown)))
+  
   ; Todo: Fix rotation for clubs^Wrings^Wclub backdrops
-  (define (ball-toss-path-segment tf h1 h2 . options)
+  (define (ball-toss-path-segment tf h1 h2 options)
     (match-let* (((struct hand ((struct position (x1 y1 z1)) _ a1)) h1)
                  ((struct hand (_ (struct position (x2 y2 z2)) a2)) h2)
                  (a1-deg (radians->degrees a1))
@@ -92,15 +104,7 @@
                   (< 100 (angle-diff a1-deg angle-to-dest))))
                  
                  ; Ugh, at least now I can change this quickly
-                 (throw-type (match (option options 'orientation)
-                               ('parallel 
-                                (if backwards? 'backdrop 
-                                    (match (option options 'throw-type)
-                                      ('normal 'pass)
-                                      ('tomahawk 'tomahawk)
-                                      )))
-                               ('perpendicular 'self)
-                               ('default 'unknown)))
+                 (throw-type (get-throw-type options backwards?))
                  
                  ; These five variables go a little ways toward styling the throw
                  ; catch and throw offset are z-offsets from the catch and throw point
@@ -210,32 +214,34 @@
   
   ; Options are an alist, I guess  
   
-  (define (hold-path-segment tf h1 . options)
+  (define (hold-path-segment tf h1 options)
     (make-path-segment tf
                        (match-let* (((struct hand (p1 _ a1)) h1)
                                     (a1-deg (radians->degrees a1)))
                          (λ _ (values p1 (make-rotation -90 a1-deg -90) (make-rotation 0 10 0))))))
     
-  (define (dwell-hold-path-segment tf h1 h-throw . options)
+  (define (dwell-hold-path-segment tf h1 h-throw h-next catch-options throw-options)
     (match-let* (((struct hand ((struct position (x2 y2 z2)) 
                                 (struct position (x1 y1 z1)) 
                                 a1)) h1)
                  ((struct hand ((struct position (x-throw y-throw _)) _ a2)) h-throw)
+                 ((struct hand (_ (struct position (x3 y3 _)) a-next)) h-next) 
                  (a1-deg (radians->degrees a1))
                  (a2-deg (radians->degrees a2))
-                 (angle-to-dest (get-angle (- x-throw x1) (- y-throw y1)))                 
-                 (backwards? (< 100 (angle-diff a2-deg angle-to-dest)))
+                 (a-next-deg (radians->degrees a-next))
+                 (angle-from-previous (get-angle (- x-throw x1) (- y-throw y1)))
+                 (angle-to-next (get-angle (- x2 x3) (- y2 y3)))                 
+                 (previous-backwards? (< 100 (angle-diff a2-deg angle-from-previous)))
+                 (next-backwards? (< 100 (angle-diff a-next-deg angle-to-next))) 
                  
                  ; Ugh, at least now I can change this quickly
-                 (throw-type (match (option options 'orientation)
-                               ('parallel 
-                                (if backwards? 'backdrop 
-                                    (match (option options 'throw-type)
-                                      ('normal 'pass)
-                                      ('tomahawk 'tomahawk)
-                                      )))
-                               ('perpendicular 'self)
-                               ('default 'unknown)))
+                 (throw-type (get-throw-type catch-options
+                                             previous-backwards?))
+                 (next-throw-type (get-throw-type throw-options
+                                                  next-backwards?
+                                                  ))
+                 
+                 ;; TODO: UNSCREW ALL OF THIS
                  (catch-rotation (match throw-type
                                    ('pass 90)
                                    ('tomahawk 0)
