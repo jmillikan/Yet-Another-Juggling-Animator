@@ -1,22 +1,23 @@
 (module example-patterns scheme
-  (require "juggling-core.ss" srfi/1)
+  (require "juggling-core.ss" "pattern-utilities.ss" srfi/1)
   
   (provide (all-defined-out))
   
   (define 4-hand-examples
-    '("966" ; 7-club 3-count
+    '("5" "7" "9" "b" 
+      "966" ; 7-club 3-count
       "996" ; 8-club pps
       "9629669669969929" ; Copenhagen countdown
       "86277" "86727" ; Whynots
-      "5" "7" "9" "b" 
-      "b97" "db97" ; Some scary theoretical ultimates patterns
+      #;("b97" "db97") ; Some scary only-theoretical ultimates patterns
       "7966" ; A staggered 7-club 2-count
       "75666" ; Cool pattern from Madison, spotted at Madfest 2010
+      "756" ; Much harder variant
       "747" ; pass-pass-hold (2/3 of 7 ultimates)
-      "747b47747707" "7b7740747747"  ; Early and late triples
+      #;("747b47747707" "7b7740747747")  ; Early and late triples
       "945747747" ; double-joe in 747
       "794646" "7946466" ; 6-club oddities showing hte matching "signature" of 744 and 966
-      "b784847" "b7848477777" ; an ill-concieved 7 club popcorn
+      #;("b784847" "b7848477777") ; an ill-concieved 7 club popcorn
             ))
   
   ; What's the fun of having a million of these?
@@ -24,20 +25,22 @@
     '("3" "4" "5" "6" "7" "8" "9" "7531" "db97531" "64514" "55550" "552" "5551" "555505551" "744" "51" "71" "91"))
   
   (define 6-ss-examples
-    '("999d" ; 4-count triangle
-      "9ddd" ; 3/4-count triangle?
-      "a" ; triangorilla?
+    '(
+      "8"
+      "a" ; 10 ultimates/gorilla
+      "b" ; 11 ultimates
       "e" ; 14-object "gorilla"
-      "ama" ; with "aam", "maa" a set of 14-object triple/single gorillas
-      "9" ; cascades
+      
       "9a8 999 a89 999" ; 4-count feed
       "9a8 a89 999" ; PPS feed
+      "9a8 a89" ; 1-countt feed
+      
+      "d999" ; 4-count triangle
       "aa7999" ; 3-man line (looks astonishingly accurate...)
       
       ; Some patterns from Luke from Madison
       "a8999" ; 
       "c99aa" ;
-      
       ))
   
   ; Incorrect support for a subset of Passing SS
@@ -133,6 +136,8 @@
      (list (make-position 0.4 0 1.0) (make-position 0 0 1.0))
      ; "Left" hand
      (list (make-position -0.4 0 1.0) (make-position 0 0 1.0))))
+  
+  (define 4-man-feed (append (rotate-hands pair-of-hands (* pi 1.14)) (take (juggler-circle 15 6.0) 6)))
   
   (define hands-examples
     (list "j #;(1 juggler - a pair of hands)"
@@ -253,5 +258,127 @@
       (- - (6 3) - (9 1) - - (2 7))
       (- (3 7) - -) ; to c
       (- - - (6 2) - (6 4) - (1 7)))) ; d - To beat b
+  
+  #;(define complete-patterns-text
+    (append
+     '("-- 4-hand siteswaps --")
+     4-hand-examples 
+     (map 
+      (λ (s) (format "~a (Shadow)" s))
+      4-hand-examples) 
+     '("-- 6-hand siteswaps --")
+     6-ss-examples
+     (map 
+      (λ (s) (format "~a (J2 reversed)" s))
+      6-ss-examples)
+     
+     '("== Rhythms ==")
+     
+     '("2-count"
+       "4-count"
+       "3-count"
+       "PPS"
+       "Jim's 3-count (Fast)"
+       "Jim's 3-count (Slow)"
+       "Mild Madness (Fast)"
+       "Mild Madness (Slow)"
+       "Jim's 1-count"
+       "Martin's Ultimates"
+       "5 club ultimates"
+       "7 club 2-count"
+       "7 club 2-count crossing"
+       "7 singles (six-beat)"
+       "7 ultimates"
+       "7 club 3-count"
+       "7 club 4-count"
+       "8 club singles"
+       "8 club doubles"
+       "8 club ultimates (async)"
+       "8 club ultimates (sync)"
+       "9 club doubles" ; (reorder-throws (4hss->sexp "b7") '(0 2 1 3) '(0 1 2 3))
+       "9 club ultimates (4.5)"
+       "9 club ultimates (4/5)"
+       "10 club doubles")
+     
+     '("--- Boring Stuff ---")
+     '("-- 2-hand siteswaps --")
+     2-ss-examples
+     )
+    )
+  
+  
+  
+  (define complete-patterns-internal
+    (append
+     '(("-- 4-hand siteswaps --"))
+     (map (λ (ss)
+           (list ss (format "(4hss->sexp \"~a\")" ss) "pair-of-jugglers" 0.16 0.25 4)) 4-hand-examples)
+     (map (λ (ss)
+           (list (format "~a (RLRL)" ss) (format "(reorder-throws (4hss->sexp \"~a\") '(0 2 1 3) '(1 2 3 0))" ss) "pair-of-jugglers" 0.16 0.25 4)) 4-hand-examples)
+     '(("-- 6-hand siteswaps --"))
+     (map (λ (ss)
+           (list ss (format "(6hss->sexp \"~a\")" ss) "(juggler-circle 3 2.5)" 0.11 0.25 6)) 6-ss-examples)
+     (map (λ (ss)
+           (list (format "~a (J2 reversed)" ss) (format "(reorder-throws (6hss->sexp \"~a\") '(0 2 4 1 3 5) '(0 3 4 1 2 5))" ss) "(juggler-circle 3 2.5)" 0.11 0.25 6)) 6-ss-examples)
+     
+     '(("-- Rhythms --"))
+     
+     `(("2-count" "`(,(sync 4 3 3 even?) ,(sync 4 3 -1 odd?))" "pair-of-jugglers" 0.35 0.3 2)
+       ("4-count" "`(,(sync 4 3 3 even?) ,(sync 4 3 -1 odd?) ,(sync 4 3 1 even?) ,(sync 4 3 -1 odd?))" "pair-of-jugglers" 0.35 0.3 2)
+       ("3-count" "`(* ,(sync 4 3 3 even?) ,(sync 4 3 -1 odd?) ,(sync 4 3 1 even?))" "pair-of-jugglers" 0.35 0.3 2)
+       ("PPS" "`(* ,(sync 4 3 3 even?) ,(sync 4 3 1 odd?) ,(sync 4 3 1 even?))" "pair-of-jugglers" 0.35 0.3 2)
+       ("Jim's 3-count (Fast)" "'(* ((3 3) - (3 0) -) ((3 1) - - (4 2 antihurry)) (- (3 0) (2 3 hurry) -) ((3 3) - - (3 1)) (- (4 0 antihurry) - (3 2)) ((2 1 hurry) - (3 3) -))" "pair-of-jugglers" 0.35 0.3 2)
+       ("Jim's 3-count (Slow)" "(4hss->sexp \"7746666\")" "pair-of-jugglers" 0.16 0.25 4)
+       ("Mild Madness (Fast)" "`(*((3 3) - (3 0) -) ((1 1) (3 2) - (3 1))
+           (- (3 0) (2 3 hurry) -) ((3 3) - - (3 1))
+           (- (3 2) (3 0) (1 2)) ((2 1 hurry) - (3 3) -))" "pair-of-jugglers" 0.35 0.25 4)
+       ("Mild Madness (Slow)" "(4hss->sexp \"7777266\")" "pair-of-jugglers" 0.16 0.25 4)
+       ("Jim's 1-count" "'(((4 3 antihurry) - - (2 1 hurry)) 
+(- (2 2 hurry) - (4 1 antihurry)) 
+(- (4 2 antihurry) (2 0 hurry) -) 
+((2 3 hurry) - (4 0 antihurry) -))" "pair-of-jugglers" 0.37 0.25 2)
+       ("Martin's Ultimates" "'(* ((3 3) - (3 0) -) ((1 1) (2 2 hurry) - (3 1))
+(- (3 2) (3 0) -) ((3 3) - (1 3) (2 1 hurry)))" "pair-of-jugglers" 0.35 0.25 2)
+       ("5 club ultimates" "(4hss->sexp \"744\")" "pair-of-jugglers" 0.16 0.3 4)
+       ("7 club 2-count" "(passing-ss->sexp \"<4p 3|4p 3>\")" "pair-of-jugglers" 0.35 0.3 2)
+       ("7 club 2-count crossing" "(passing-ss->sexp \"<4p 3|3 4p>\")" "pair-of-jugglers" 0.35 0.3 2)
+       ("7 singles (six-beat)" 
+      "#;(7-club singles) '(((11 3) - - -) () (- (10 0)) (- - (11 1)) () (- - - (10 2)))" "pair-of-jugglers" 0.11 0.25 4)
+       ("7 ultimates" "(4hss->sexp \"7\")" "pair-of-jugglers" 0.16 0.25 4)
+       ("7 club 3-count" "(4hss->sexp \"966\")" "pair-of-jugglers" 0.16 0.25 4)
+       ("7 club 4-count" "(passing-ss->sexp \"<5p 3 3 3|3 3 5p 3>\")" "pair-of-jugglers" 0.35 0.3 4)
+       ("8 club singles" "'(((2 3) (2 0) (2 1) (2 2)))" "pair-of-jugglers" 0.6 0.3 4)
+       ("8 club triples" "(passing-ss->sexp \"<5p 3|5p 3>\")" "pair-of-jugglers" 0.35 0.3 4)
+       ("8 club ultimates (async)" "(passing-ss->sexp \"<5p 5p|3p 3p>\")" "pair-of-jugglers" 0.35 0.3 4)
+       ("8 club ultimates (sync)" "'(((5 3) (5 2) - -) (- - (3 1) (3 0)))" "pair-of-jugglers" 0.35 0.3 4)
+       ("9 club doubles" "(reorder-throws (4hss->sexp \"b7\") '(0 2 1 3) '(0 1 2 3))" "pair-of-jugglers" 0.16 0.25 4)
+       ("9 club ultimates" "(4hss->sexp \"9\")" "pair-of-jugglers" 0.16 0.25 4)
+       ("9 club ultimates (4/5)" "(passing-ss->sexp \"<4px 4px|5p 5p>\")" "pair-of-jugglers" 0.3 0.25 4)
+       ("10 club doubles" "(passing-ss->sexp \"<5p 5|5p 5>\")" "pair-of-jugglers" 0.3 0.25 4))
+     
+     '(("-- Feeds --"))
+     
+     '(("Martin's Mildness" "
+`(*
+((3 3) - (3 0) - (3 5) -) 
+((1 1) (3 4) - (4 2 antihurry) - (3 1))
+(- (3 0) (2 3 hurry) - (4 5 antihurry) -) 
+((3 3) - - (3 1) - (2 4 hurry))
+(- (3 4) - (3 2) (3 0) -) 
+((2 1 hurry) - (3 3) - (3 5) -)
+)" "4-man-feed" 0.35 0.25 2) ; not quite working...
+       ("PPS Feed" "'(* ((3 3) - (3 1) - (3 5) -) (- (3 4) - (3 2) - (3 0)) ((3 1) - (3 3) - (3 5) -))" "4-man-feed" 0.35 0.25 2)
+       ("747 Feed" "747-feed" "4-man-feed"  0.16 0.25 4)
+       ("744 vs 747 Feed" "777-747-744-feed" "4-man-feed" 0.16 0.25 4)
+       ("7 vs 966 Feed" "777-feed-3s" "4-man-feed" 0.16 0.25 4))
+       
+     
+     '(("== Boring Stuff ==")) ; "Boring Stuff..."
+     ; 2-hand...
+     '(("-- 2-hand siteswaps --"))
+     (map (λ (ss)
+           (list ss (format "(2hss->sexp \"~a\")" ss) "pair-of-hands" 0.25 0.2 2)) 2-ss-examples)
+     )
+    )
   
   )

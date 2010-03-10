@@ -133,7 +133,7 @@
       (if (null? sexp-rest) '()
           (cons
            (match-let* ((beat (begin
-                          (display (format "Beat: ~a~nt:~a~n" (car sexp-rest) t))
+                          #;(display (format "Beat: ~a~nt:~a~n" (car sexp-rest) t))
                           (car sexp-rest)))
                   (old-hand (list-ref old-ordering t))
                   (new-hand (list-ref ordering t))
@@ -152,10 +152,8 @@
                     (if (= h new-hand)
                         new-throw
                         '-)
-                    (loop-hands (add1 h))
-                    )
-                   '()
-                   )))
+                    (loop-hands (add1 h)))
+                   '())))
            (loop-beats (cdr sexp-rest)
                        (if (< (add1 t) (length ordering)) (add1 t)
                            0))))))

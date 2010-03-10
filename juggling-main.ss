@@ -17,18 +17,61 @@
   (define w #f) ; screw it.
   (define main-window
     (class* frame% ()
-      (inherit show)
+      (inherit show set-status-text)
       (super-instantiate ("Juggling Animator" #f))
-      (define canvas (instantiate juggling-canvas% (this) (min-width 600) (min-height 450)))
-      (define control-panel (instantiate horizontal-panel% (this)
+      
+      (send this create-status-line)
+      
+      (define h-split (instantiate horizontal-panel% (this)))
+      (define v-split (instantiate vertical-panel% (h-split)))
+      
+      (define prefab-column (instantiate vertical-panel% (h-split)))
+      
+      (define prefab-list (instantiate list-box% 
+                            (#f (map car complete-patterns-internal) prefab-column) (style '(single)) (min-width 170)))
+      
+      (define prefab-buttons (instantiate horizontal-panel% (prefab-column) (stretchable-height #f)))
+      
+      (define examine-button (instantiate button% ("Edit" prefab-buttons 
+                                                          (λ (_ e)
+                                  (with-handlers ((exn:fail? (λ (e) (set-error (exn-message e)))))
+                                    (let* 
+                                        ((sels (send prefab-list get-selections))) ; Should have 0 or 1 selections.
+                                      (if (= (length sels) 0)
+                                          'cake
+                                          (match-let*
+                                              (((list pattern-name pattern-t jugglers-t beat dwell hold) 
+                                                (list-ref complete-patterns-internal (car sels))))
+                                            (send ed-win edit-pattern
+                                                  pattern-t jugglers-t beat dwell hold
+                                             )))))))))
+      
+      (define run-button (instantiate button% 
+                               ("Run" prefab-buttons 
+                                (λ (_ e)
+                                  (with-handlers ((exn:fail? (λ (e) (set-error (exn-message e)))))
+                                    (let* 
+                                        ((sels (send prefab-list get-selections))) ; Should have 0 or 1 selections.
+                                      (if (= (length sels) 0)
+                                          'cake
+                                          (match-let*
+                                              (((list pattern-name pattern-t jugglers-t beat dwell hold) 
+                                                (list-ref complete-patterns-internal (car sels)))
+                                               (hands (eval-string jugglers-t)))
+                                            (show-pattern 
+                                             (sexp->pattern (eval-string pattern-t) beat dwell hands hold)
+                                             hands)))))))))
+      
+      (define canvas (instantiate juggling-canvas% (v-split) (min-width 600) (min-height 450)))
+      
+      (define control-panel (instantiate horizontal-panel% (v-split)
                               (alignment '(center center)) (stretchable-height #f) (min-height 150)))
       
       (define/public (show-pattern p j)
         (send canvas set-pattern p)
         (send canvas set-jugglers j
               ; allow jugglers-lambda or related functions to throw warnings about juggler placement...
-              (λ (s) (send this set-error s))
-              ))
+              (λ (s) (send this set-error s))))
       
       (define ed-win (instantiate editor-window% (this)))
       
@@ -36,13 +79,15 @@
       (instantiate-view-controls canvas control-panel)
       
       (define/public (set-error e)
-        (send error-box set-value e))
+        (set-status-text e)
+        #;(send error-box set-value e))
+      
+      (define/public (clear-error)
+        (set-status-text ""))
+      
       (define mb (new menu-bar% [parent this]))
       
       (define show-editor #f)
-      
-      
-      
       
       (define/public (editor-closed)
         (set! show-editor #f)
@@ -59,6 +104,7 @@
                           (checked show-editor)))
       
       (define show-butt-collisions #f)
+      (send canvas set-butt-collisions #f)
       
       (define mi-butt-collisions (instantiate checkable-menu-item%
                                    ("Butt proximity warnings"
@@ -67,20 +113,13 @@
                                       (set! show-butt-collisions (not show-butt-collisions))
                                       (send canvas set-butt-collisions show-butt-collisions)
                                       (send mi-butt-collisions check show-butt-collisions)))
-                                   (checked show-butt-collisions)))
-                                      
-      
-      (define error-box (instantiate text-field% ("" this)))))
+                                   (checked show-butt-collisions)))))
   
   (define editor-window%
     (class* frame% ()
       (inherit show)
       (init-field main-window)
       (super-instantiate ("Pattern Editor" #f) (enabled #t) (width 600))
-      
-      #;(
-         Ripped from the docs for now.
-                )
       
       (define/augment (on-close)
         (send main-window editor-closed))
@@ -92,6 +131,15 @@
                             (init-value  "0.28") (min-width 60) (stretchable-width #f)))
       (define hold-beats (instantiate text-field% ("Hold Beats (max)" values-row) 
                            (init-value  "2") (min-width 60) (stretchable-width #f)))
+      
+      (define/public (edit-pattern p j b d h)
+        (send input-beat set-value (number->string b))
+        (send input-dwell set-value (number->string d))
+        (send hold-beats set-value (number->string h))
+        (send juggler-t erase)
+        (send juggler-t insert j 0)
+        (send pattern-t erase)
+        (send pattern-t insert p 0))
       
       (instantiate button% 
         ("Run" values-row (λ _ 
@@ -212,7 +260,7 @@
       (instantiate pattern-line% ("Siteswap" "0.25" "0.16" "744" 2hss->sexp (λ _ 2) 
                                              (λ _ pair-of-hands) w 2-ss-examples this))
       (instantiate pattern-line% ("4-hand SS" "0.15" "0.20" "966" 4hss->sexp (λ _ 4) 
-                                              (λ _ (juggler-circle 2 3.0)) w 4-hand-examples this))
+                                              (λ _ pair-of-jugglers) w 4-hand-examples this))
       (instantiate pattern-line% ("Synchronous" "0.25" "0.20" "(6x,4)*" sync-ss->sexp (λ _ 2) 
                                                 (λ _ (juggler-circle 2 3.0)) w syncss-examples this))))
   
