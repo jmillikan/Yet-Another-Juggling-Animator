@@ -143,18 +143,17 @@
     (list "j #;(1 juggler - a pair of hands)"
           "mills-hands #;(An outright cheat since we can't do moving hands yet)"
           "pair-of-jugglers ; r1 l1 r2 l2)"
-          "#;(Dropback line) (dropback-line 1 3.0 #t #t)"
+          "#;(Dropback line) (dropback-line 1 3.0 1.0 #t #t)"
           "#;(Back to back) (append j (translate-hands (rotate-hands j pi) 0 -2.5 0))"
           "#;(Triangle) (juggler-circle 3 2.5)"
           "#;(Star) (juggler-circle 5 3.0)"
           "#;(Star) (rotate-hands (juggler-circle 5 3.0) (/ (* pi 0) 16)) "
           "#;(Dropback ring) (append (juggler-circle 3 2.5) (juggler-circle 3 4.5))"
-          "#;(15-juggler ring) (juggler-circle 15 8.0)"
           "#;(15-jugglers - 3 rings) (append (juggler-circle 5 8.0) (juggler-circle 5 5.0) (juggler-circle 5 10.0))"
           "#;(600 jugglers, 6 rings) (append (juggler-circle 100 60.0) (juggler-circle 100 63.0) (juggler-circle 100 66.0) (juggler-circle 100 51.0)  (juggler-circle 100 54.0) (juggler-circle 100 57.0))"
           "#;(Async gorilla hands) (mangle-hands (juggler-circle 3 3.0) '(3 0 1 2 4 5))"
-          "#;(5-man dropback line) (dropback-line 3 3.0 #t #t)"
-          "#;(40-man \"canoe\" (longboat?)) (append (dropback-line 19 3.0 #t #f) (translate-hands (rotate-hands (dropback-line 19 3.0 #t #f) pi) 60 3 0))"
+          "#;(5-man dropback line) (dropback-line 3 3.0 1.0 #t #t)"
+          "#;(40-man \"canoe\" (longboat?)) (append (dropback-line 19 3.0 1.0 #t #f) (translate-hands (rotate-hands (dropback-line 19 3.0 1.0 #t #f) pi) 60 3 0))"
           "#;(11-man feed, elevated feeder (feeder last)) (append (take (juggler-circle 30 10.0) 20) (translate-hands (rotate-hands pair-of-hands (* pi 9/7)) 0 0 3.0)))"
           "#;(Wide 4-man feed (feeder first)) (append (rotate-hands pair-of-hands (* pi 1.14)) (take (juggler-circle 15 9.0) 6)))"
           "(append (rotate-hands j (* pi 1.14)) (map list-ref (circular-list (juggler-circle 15 9.0)) '(0 1 4 5)) (rotate-hands (translate-hands j 0 -1.5 0.5) (* pi 1.14)))"
@@ -259,70 +258,9 @@
       (- (3 7) - -) ; to c
       (- - - (6 2) - (6 4) - (1 7)))) ; d - To beat b
   
-  #;(define complete-patterns-text
-    (append
-     '("-- 4-hand siteswaps --")
-     4-hand-examples 
-     (map 
-      (λ (s) (format "~a (Shadow)" s))
-      4-hand-examples) 
-     '("-- 6-hand siteswaps --")
-     6-ss-examples
-     (map 
-      (λ (s) (format "~a (J2 reversed)" s))
-      6-ss-examples)
-     
-     '("== Rhythms ==")
-     
-     '("2-count"
-       "4-count"
-       "3-count"
-       "PPS"
-       "Jim's 3-count (Fast)"
-       "Jim's 3-count (Slow)"
-       "Mild Madness (Fast)"
-       "Mild Madness (Slow)"
-       "Jim's 1-count"
-       "Martin's Ultimates"
-       "5 club ultimates"
-       "7 club 2-count"
-       "7 club 2-count crossing"
-       "7 singles (six-beat)"
-       "7 ultimates"
-       "7 club 3-count"
-       "7 club 4-count"
-       "8 club singles"
-       "8 club doubles"
-       "8 club ultimates (async)"
-       "8 club ultimates (sync)"
-       "9 club doubles" ; (reorder-throws (4hss->sexp "b7") '(0 2 1 3) '(0 1 2 3))
-       "9 club ultimates (4.5)"
-       "9 club ultimates (4/5)"
-       "10 club doubles")
-     
-     '("--- Boring Stuff ---")
-     '("-- 2-hand siteswaps --")
-     2-ss-examples
-     )
-    )
-  
-  
-  
   (define complete-patterns-internal
     (append
-     '(("-- 4-hand siteswaps --"))
-     (map (λ (ss)
-           (list ss (format "(4hss->sexp \"~a\")" ss) "pair-of-jugglers" 0.16 0.25 4)) 4-hand-examples)
-     (map (λ (ss)
-           (list (format "~a (RLRL)" ss) (format "(reorder-throws (4hss->sexp \"~a\") '(0 2 1 3) '(1 2 3 0))" ss) "pair-of-jugglers" 0.16 0.25 4)) 4-hand-examples)
-     '(("-- 6-hand siteswaps --"))
-     (map (λ (ss)
-           (list ss (format "(6hss->sexp \"~a\")" ss) "(juggler-circle 3 2.5)" 0.11 0.25 6)) 6-ss-examples)
-     (map (λ (ss)
-           (list (format "~a (J2 reversed)" ss) (format "(reorder-throws (6hss->sexp \"~a\") '(0 2 4 1 3 5) '(0 3 4 1 2 5))" ss) "(juggler-circle 3 2.5)" 0.11 0.25 6)) 6-ss-examples)
-     
      '(("-- Rhythms --"))
-     
      `(("2-count" "`(,(sync 4 3 3 even?) ,(sync 4 3 -1 odd?))" "pair-of-jugglers" 0.35 0.3 2)
        ("4-count" "`(,(sync 4 3 3 even?) ,(sync 4 3 -1 odd?) ,(sync 4 3 1 even?) ,(sync 4 3 -1 odd?))" "pair-of-jugglers" 0.35 0.3 2)
        ("3-count" "`(* ,(sync 4 3 3 even?) ,(sync 4 3 -1 odd?) ,(sync 4 3 1 even?))" "pair-of-jugglers" 0.35 0.3 2)
@@ -356,9 +294,18 @@
        ("9 club ultimates (4/5)" "(passing-ss->sexp \"<4px 4px|5p 5p>\")" "pair-of-jugglers" 0.3 0.25 4)
        ("10 club doubles" "(passing-ss->sexp \"<5p 5|5p 5>\")" "pair-of-jugglers" 0.3 0.25 4))
      
-     '(("-- Feeds --"))
-     
-     '(("Martin's Mildness" "
+     '(("-- 3 man feeds --"))
+     '(("Martin's Madness" "
+`(*
+(- (3 3) (3 1) - (3 5) -) 
+((3 4) (1 0) - (4 2 antihurry) - (3 0))
+((3 1) -  (2 3 hurry) - (4 5 antihurry) -) 
+(- (3 3) - (3 0) - (2 4 hurry))
+((3 4) - - (3 2) (3 1) -) 
+(- (2 0 hurry)  (3 3) - (3 5) -)
+)" "4-man-feed" 0.35 0.25 2)
+       
+       ("Martin's Mildness" "
 `(*
 ((3 3) - (3 0) - (3 5) -) 
 ((1 1) (3 4) - (4 2 antihurry) - (3 1))
@@ -366,12 +313,85 @@
 ((3 3) - - (3 1) - (2 4 hurry))
 (- (3 4) - (3 2) (3 0) -) 
 ((2 1 hurry) - (3 3) - (3 5) -)
-)" "4-man-feed" 0.35 0.25 2) ; not quite working...
+)" "4-man-feed" 0.35 0.25 2)
        ("PPS Feed" "'(* ((3 3) - (3 1) - (3 5) -) (- (3 4) - (3 2) - (3 0)) ((3 1) - (3 3) - (3 5) -))" "4-man-feed" 0.35 0.25 2)
        ("747 Feed" "747-feed" "4-man-feed"  0.16 0.25 4)
        ("744 vs 747 Feed" "777-747-744-feed" "4-man-feed" 0.16 0.25 4)
-       ("7 vs 966 Feed" "777-feed-3s" "4-man-feed" 0.16 0.25 4))
+       ("7 vs 966 Feed" "777-feed-3s" "4-man-feed" 0.16 0.25 4)
+       ("10 Club Gorilla" "(reorder-throws (6hss->sexp \"a\") '(0 2 4 1 3 5) '(1 5 3 0 2 4))" "4-man-feed" 0.11 0.25 6)
+       ("10 Club Defensive Gorilla" "(reorder-throws (6hss->sexp \"a\") '(0 2 4 1 3 5) '(0 5 3 1 2 4))" "4-man-feed" 0.11 0.25 6)
+       ("Split Gorilla" "'(
+((5 5) (5 2) - - - - - -) 
+(- - - (5 1) (7 5) - (5 0)) 
+(- - (5 3) - - (5 4) - (5 6))
+((5 7) (5 2)) 
+(- - - (5 1) (5 0) - (7 7)) 
+(- - (5 3) - - (5 4) - (5 6)))" "4-man-feed" 0.22 0.25 6)
+       )
+     
+     '(("-- Dropbacks --"))
+     
+     '(
+       ("9-club line" "`(,(sync 6 3 3 even?) ,(sync 6 3 -1 odd?))" 
+                     "(dropback-line 1 3.0 1.0 #t #t)"
+                     0.35 0.3 2)
        
+       ("5 man line, 5p 3" "(list (sync 10 5 3 even?) (sync 10 3 -1 odd?))" 
+                     "(dropback-line 3 3.0 1.0 #t #t)"
+                     0.35 0.3 2)
+       
+       ("9-club line (aa7999)" "(6hss->sexp \"aa7999\")" 
+                     "(dropback-line 1 3.0 1.0 #t #t)"
+                     0.13 0.25 2)
+       
+       ("9-club line (aa7999)" "(6hss->sexp \"aa7999\")" 
+                     "(dropback-line 1 3.0 1.0 #t #t)"
+                     0.13 0.25 2)
+       
+       ("10-club line (d999aa)" "(6hss->sexp \"d999aa\")" 
+                     "(dropback-line 1 3.0 1.0 #t #t)"
+                     0.13 0.25 2)
+       
+       ("3 man 8-club ultimate line" "(reorder-throws (6hss->sexp \"8\") '(0 2 4 1 3 5) '(4 2 0 5 3 1))" 
+                     "(dropback-line 1 3.0 0.0 #t #t)"
+                     0.15 0.3 2)
+       
+       ("3 man 10-club ultimate line" "(6hss->sexp \"a\")" 
+                     "(dropback-line 1 3.0 0.0 #t #t)"
+                     0.13 0.25 2)
+       )
+       
+     '(("-- Large Patterns --"))
+     
+     '(("40 man canoe"  "#;(40-man 5p 3) (list (sync 80 5 3 even?) (sync 80 3 -1 odd?))"
+                        "#;(40-man \"canoe\" (longboat?)) (append (dropback-line 19 3.0 1.0 #t #f) (translate-hands (rotate-hands (dropback-line 19 3.0 1.0 #t #f) pi) 60 3 0))"
+                        0.35 0.3 2)
+       ("15 man 3-count" "#;(15 juggler 3-count - traveling props) (list (sync 30 3 1 even?) (sync 30 3 -1 odd?) (sync 30 3 9 even?) (sync 30 3 -1 odd?) (sync 30 3 1 even?)  (sync 30 3 19 odd?))"
+                         "#;(15-juggler ring) (juggler-circle 15 7.0)" 0.35 0.3 2)
+       ("15 man fantasy?" "#;(15 juggler nonsense) (list (sync 30 5 1 even?) (sync 30 5 -1 odd?) (sync 30 11 9 even?) (sync 30 5 -1 odd?) (sync 30 5 1 even?)  (sync 30 11 19 odd?))"
+                         "#;(15-juggler ring) (juggler-circle 15 7.0)" 0.25 0.2 2)
+       ("11 man 55-club typewriter feed + pedestal" 
+      "#;(5-club feed, 10 feedees) (typewriter-feed 11 2 5)"
+      #;(11-man feed, elevated feeder (feeder last)) 
+                                                         "(append (take (juggler-circle 30 10.0) 20) (translate-hands (rotate-hands pair-of-hands (* pi 9/7)) 0 0 3.0)))" 0.25 0.2 2)
+       ("18-man typewriter feed" 
+      "(typewriter-feed 19 2 5)"
+      #;(18-man typewriter feed, elevated feeder (feeder last)) 
+      "(append (take (juggler-circle 16 5.0) 8) 
+              (take (juggler-circle 23 8.0) 12) 
+              (take (juggler-circle 30 11.0) 16) 
+              (translate-hands (rotate-hands pair-of-hands (* pi 9/7)) 0 0 3.0)))" 0.25 0.2 2))
+     
+     '(("-- 4-hand siteswaps --"))
+     (map (λ (ss)
+           (list ss (format "(4hss->sexp \"~a\")" ss) "pair-of-jugglers" 0.16 0.25 4)) 4-hand-examples)
+     (map (λ (ss)
+           (list (format "~a (RLRL)" ss) (format "(reorder-throws (4hss->sexp \"~a\") '(0 2 1 3) '(1 2 3 0))" ss) "pair-of-jugglers" 0.16 0.25 4)) 4-hand-examples)
+     '(("-- 6-hand siteswaps --"))
+     (map (λ (ss)
+           (list ss (format "(6hss->sexp \"~a\")" ss) "(juggler-circle 3 2.5)" 0.11 0.25 6)) 6-ss-examples)
+     (map (λ (ss)
+           (list (format "~a (J2 reversed)" ss) (format "(reorder-throws (6hss->sexp \"~a\") '(0 2 4 1 3 5) '(0 3 4 1 2 5))" ss) "(juggler-circle 3 2.5)" 0.11 0.25 6)) 6-ss-examples)
      
      '(("== Boring Stuff ==")) ; "Boring Stuff..."
      ; 2-hand...

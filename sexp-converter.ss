@@ -3,7 +3,8 @@
   (require "juggling-core.ss")
   
   (provide 
-   sexp->pattern)
+   sexp->pattern
+   expand-sexp-stars)
   
   ; (list '- '* '* '() '-)
   ; (delay next-throw last-throw throw-list-backwards first-hand)
@@ -19,15 +20,18 @@
         (and (list? lst-or-atom)
              (member mem lst-or-atom))))
   
-  (define (sexp->pattern sexp-pattern beat-value dwell-value hands-lst hold-beats)   
-    (sexp->pattern-internal 
-     (cond ((has? (car sexp-pattern) '*)
+  (define (expand-sexp-stars sexp-pattern)
+    (cond ((has? (car sexp-pattern) '*)
             (append (cdr sexp-pattern) (star-pattern (cdr sexp-pattern))))              
            ((has? (car sexp-pattern) '**)
             (append (cdr sexp-pattern) (twostar-pattern (cdr sexp-pattern))))
            ((has? (car sexp-pattern) '***) ; "This is incredibly serious business."
             (append (cdr sexp-pattern) (star-pattern (twostar-pattern (cdr sexp-pattern)))))
-           (#t sexp-pattern))
+           (#t sexp-pattern)))
+  
+  (define (sexp->pattern sexp-pattern beat-value dwell-value hands-lst hold-beats)   
+    (sexp->pattern-internal 
+     (expand-sexp-stars sexp-pattern)
      beat-value dwell-value hands-lst hold-beats))          
   
   ; Double up the pattern with all throws in and going to opposite hands - hand n + 1 % 2 in multi-hand setups

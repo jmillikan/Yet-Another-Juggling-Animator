@@ -18,7 +18,7 @@
   (define main-window
     (class* frame% ()
       (inherit show set-status-text)
-      (super-instantiate ("Juggling Animator" #f))
+      (super-instantiate ("Yet Another Overcomplicated Pattern Animator" #f))
       
       (send this create-status-line)
       
@@ -38,13 +38,16 @@
                                     (let* 
                                         ((sels (send prefab-list get-selections))) ; Should have 0 or 1 selections.
                                       (if (= (length sels) 0)
-                                          'cake
+                                          (error "No pattern selected")
                                           (match-let*
                                               (((list pattern-name pattern-t jugglers-t beat dwell hold) 
                                                 (list-ref complete-patterns-internal (car sels))))
                                             (send ed-win edit-pattern
-                                                  pattern-t jugglers-t beat dwell hold
-                                             )))))))))
+                                                  pattern-t jugglers-t beat dwell hold)
+                                            
+                                            (set! show-editor #t)
+                                            (send ed-win show #t)
+                                            (send mi-editor check #t)))))))))
       
       (define run-button (instantiate button% 
                                ("Run" prefab-buttons 
@@ -53,7 +56,7 @@
                                     (let* 
                                         ((sels (send prefab-list get-selections))) ; Should have 0 or 1 selections.
                                       (if (= (length sels) 0)
-                                          'cake
+                                          (error "No pattern selected")
                                           (match-let*
                                               (((list pattern-name pattern-t jugglers-t beat dwell hold) 
                                                 (list-ref complete-patterns-internal (car sels)))
@@ -259,7 +262,7 @@
       (super-instantiate (parent) (alignment '(center center)) (stretchable-height #f))
       (instantiate pattern-line% ("Siteswap" "0.25" "0.16" "744" 2hss->sexp (λ _ 2) 
                                              (λ _ pair-of-hands) w 2-ss-examples this))
-      (instantiate pattern-line% ("4-hand SS" "0.15" "0.20" "966" 4hss->sexp (λ _ 4) 
+      (instantiate pattern-line% ("4-hand SS" "0.15" "0.2" "966" 4hss->sexp (λ _ 4) 
                                               (λ _ pair-of-jugglers) w 4-hand-examples this))
       (instantiate pattern-line% ("Synchronous" "0.25" "0.20" "(6x,4)*" sync-ss->sexp (λ _ 2) 
                                                 (λ _ (juggler-circle 2 3.0)) w syncss-examples this))))
@@ -286,7 +289,7 @@
                                                                   get-hands w sexp-examples this)))
       (set! hold-length  (instantiate text-field% ("H" sexp-line) (init-value "2")))
       
-      (instantiate pattern-line% ("6-hand SS" "0.10" "0.08" "a" 6hss->sexp (λ _ 6) get-hands w 6-ss-examples this))
+      (instantiate pattern-line% ("6-hand SS" "0.10" "0.2" "a" 6hss->sexp (λ _ 6) get-hands w 6-ss-examples this))
       
       
       (instantiate pattern-line% ("Passing SS" "0.28" "0.20" "<3p 3 3|3p 3 3>" passing-ss->sexp (λ _ 2) 

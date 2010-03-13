@@ -27,7 +27,6 @@
     (append (translate-hands (rotate-hands pair-of-hands pi) 0 2.0 0)
             (translate-hands  pair-of-hands 0 -2.0 0)))
   
-  
   (define triangle 
       (list (angle-hand (- 0 (/ pi 16)) 2.5 'left) (angle-hand (+ 0 (/ pi 16)) 2.5 'right)
             (angle-hand (- (* pi 2/3) (/ pi 12)) 2.5 'left) (angle-hand (+ (* pi 2/3) (/ pi 12)) 2.5 'right)
@@ -51,16 +50,16 @@
   ; Hand list starting with "n" pairs facing the front,
   ; an optional side-shifted guy in the back,
   ; and an optional side-shifted guy in the front facing the rest.
-  (define (dropback-line n space include-rear? include-front?)
+  (define (dropback-line n space shift include-rear? include-front?)
     (append
      (translate-hands (juggler-line n space (- (/ pi 2))) space 0 0)
      (if include-rear? (translate-hands
                         (rotate-hands pair-of-hands (- (/ pi 2)))
-                        (* space (+ n 1)) (/ space 5) 0)
+                        (* space (+ n 1)) shift 0)
          '())
      (if include-front? (translate-hands
                         (rotate-hands pair-of-hands (/ pi 2))
-                        0 (/ space 5) 0)
+                        0 shift 0)
          '())))
     
   
