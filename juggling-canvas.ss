@@ -286,6 +286,10 @@
         #;(set! jugglers (jugglers-lambda j))
         (with-gl-context
          (lambda ()
+           (if (gl-vector? jugglers-static)
+               (gl-delete-lists jugglers-static 1)
+               
+               '())
            (set! jugglers-static (gl-gen-lists 1))
            (gl-new-list jugglers-static 'compile)          
            ((jugglers-lambda j set-warning))
@@ -300,7 +304,7 @@
                              (unless paint-queued?
                                (set! paint-queued? #t)
                                (send this refresh)))
-                           10)) ; max 100 fps... More than enough
+                           30)) ; max 20 fps... Slows memory leakage
       
       (define/override (on-paint)
         (when internal-pattern
@@ -310,12 +314,13 @@
           (set! last-ms (current-milliseconds))
           
           (with-gl-context
+           
            (lambda ()
+             
              (gl-clear-color 0.0 0.0 0.0 0.0)
              (gl-clear 'color-buffer-bit 'depth-buffer-bit)
              
              (gl-push-matrix)
-             
              (begin
                (gl-translate view-posx (- view-posy) 0)
                (gl-translate 0.0 -1.0 view-zoom)
