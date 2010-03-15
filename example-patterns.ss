@@ -9,6 +9,9 @@
       "996" ; 8-club pps
       "9629669669969929" ; Copenhagen countdown
       "86277" "86727" ; Whynots
+      "7288a"
+      "855"
+      "885"
       #;("b97" "db97") ; Some scary only-theoretical ultimates patterns
       "7966" ; A staggered 7-club 2-count
       "75666" ; Cool pattern from Madison, spotted at Madfest 2010
@@ -286,6 +289,7 @@
        ("7 club 3-count" "(4hss->sexp \"966\")" "pair-of-jugglers" 0.16 0.25 4)
        ("7 club 4-count" "(passing-ss->sexp \"<5p 3 3 3|3 3 5p 3>\")" "pair-of-jugglers" 0.35 0.3 4)
        ("8 club singles" "'(((2 3) (2 0) (2 1) (2 2)))" "pair-of-jugglers" 0.6 0.3 4)
+       ("8 club doubles" "`(((7 3) - (7 1) -) (- (5 0) - (5 2)) ())" "pair-of-jugglers" 0.2 0.2 4)
        ("8 club triples" "(passing-ss->sexp \"<5p 3|5p 3>\")" "pair-of-jugglers" 0.35 0.3 4)
        ("8 club ultimates (async)" "(passing-ss->sexp \"<5p 5p|3p 3p>\")" "pair-of-jugglers" 0.35 0.3 4)
        ("8 club ultimates (sync)" "'(((5 3) (5 2) - -) (- - (3 1) (3 0)))" "pair-of-jugglers" 0.35 0.3 4)
