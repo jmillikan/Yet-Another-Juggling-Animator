@@ -20,6 +20,9 @@
       (inherit show set-status-text)
       (super-instantiate ("Yet Another Overcomplicated Pattern Animator" #f))
       
+      (define/augment (on-close)
+        (exit))
+      
       (send this create-status-line)
       
       (define h-split (instantiate horizontal-panel% (this)))
