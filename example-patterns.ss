@@ -264,10 +264,18 @@
   (define complete-patterns-internal
     (append
      '(("-- Rhythms --"))
-     `(("2-count" "`(,(sync 4 3 3 even?) ,(sync 4 3 -1 odd?))" "pair-of-jugglers" 0.35 0.3 2)
+     `(("5 club ultimates" "(4hss->sexp \"744\")" "pair-of-jugglers" 0.16 0.3 4)
+       ("5 club flats" "(4hss->sexp \"5\")" "pair-of-jugglers" 0.2 0.6 4)
+       ("5 club flurry" "(4hss->sexp \"726\")" "pair-of-jugglers" 0.16 0.25 4)
+       ("5 club Whynot?" "(4hss->sexp \"78424\")" "pair-of-jugglers" 0.16 0.25 4)
+       ("5 club NotWhy?" "(4hss->sexp \"28474\")" "pair-of-jugglers" 0.16 0.25 4)
+       
+       ("5 club Ultimate-Zip" "'(((2 1) (3 2) - -) (- - (2 3) (3 0)))" "pair-of-jugglers" 0.32 0.25 4)
+       ("2-count" "`(,(sync 4 3 3 even?) ,(sync 4 3 -1 odd?))" "pair-of-jugglers" 0.35 0.3 2)
        ("4-count" "`(,(sync 4 3 3 even?) ,(sync 4 3 -1 odd?) ,(sync 4 3 1 even?) ,(sync 4 3 -1 odd?))" "pair-of-jugglers" 0.35 0.3 2)
        ("3-count" "`(* ,(sync 4 3 3 even?) ,(sync 4 3 -1 odd?) ,(sync 4 3 1 even?))" "pair-of-jugglers" 0.35 0.3 2)
        ("PPS" "`(* ,(sync 4 3 3 even?) ,(sync 4 3 1 odd?) ,(sync 4 3 1 even?))" "pair-of-jugglers" 0.35 0.3 2)
+       ("PPSPS" "(passing-ss->sexp \"<3p 3p 3 3p 3|3p 3p 3 3p 3>\")" "pair-of-jugglers" 0.35 0.3 2)
        ("Jim's 3-count (Fast)" "'(* ((3 3) - (3 0) -) ((3 1) - - (4 2 antihurry)) (- (3 0) (2 3 hurry) -) ((3 3) - - (3 1)) (- (4 0 antihurry) - (3 2)) ((2 1 hurry) - (3 3) -))" "pair-of-jugglers" 0.35 0.3 2)
        ("Jim's 3-count (Slow)" "(4hss->sexp \"7746666\")" "pair-of-jugglers" 0.16 0.25 4)
        ("Mild Madness (Fast)" "`(*((3 3) - (3 0) -) ((1 1) (3 2) - (3 1))
@@ -278,9 +286,13 @@
 (- (2 2 hurry) - (4 1 antihurry)) 
 (- (4 2 antihurry) (2 0 hurry) -) 
 ((2 3 hurry) - (4 0 antihurry) -))" "pair-of-jugglers" 0.37 0.25 2)
-       ("Martin's Ultimates" "'(* ((3 3) - (3 0) -) ((1 1) (2 2 hurry) - (3 1))
+       ("Martin's Ultimate" "'(* ((3 3) - (3 0) -) ((1 1) (2 2 hurry) - (3 1))
 (- (3 2) (3 0) -) ((3 3) - (1 3) (2 1 hurry)))" "pair-of-jugglers" 0.35 0.25 2)
-       ("5 club ultimates" "(4hss->sexp \"744\")" "pair-of-jugglers" 0.16 0.3 4)
+       ("Martin's Ultimate (Slow)" "(4hss->sexp \"77772\")" "pair-of-jugglers" 0.16 0.25 4)
+       ("Whynot?" "(4hss->sexp \"86277\")" "pair-of-jugglers" 0.16 0.25 4)
+       ("NotWhy?" "(4hss->sexp \"86772\")" "pair-of-jugglers" 0.16 0.25 4)
+       ("6 club ultimate-zip, straights (j1)" "'(((1 1) (3 2) - (3 0)) ((3 3) (1 0) (3 1) -))" "pair-of-jugglers" 0.35 0.25 2)
+       ("6 club ultimate-zip, crossing (j1 & j2)" "'(((1 1) (3 3) (3 0) (1 2)) ((3 2) (1 0) (1 3) (3 1)))" "pair-of-jugglers" 0.35 0.25 2)
        ("7 club 2-count" "(passing-ss->sexp \"<4p 3|4p 3>\")" "pair-of-jugglers" 0.35 0.3 2)
        ("7 club 2-count crossing" "(passing-ss->sexp \"<4p 3|3 4p>\")" "pair-of-jugglers" 0.35 0.3 2)
        ("7 singles (six-beat)" 
@@ -292,7 +304,7 @@
        ("8 club doubles" "`(((7 3) - (7 1) -) (- (5 0) - (5 2)) ())" "pair-of-jugglers" 0.2 0.2 4)
        ("8 club triples" "(passing-ss->sexp \"<5p 3|5p 3>\")" "pair-of-jugglers" 0.35 0.3 4)
        ("8 club ultimates (async)" "(passing-ss->sexp \"<5p 5p|3p 3p>\")" "pair-of-jugglers" 0.35 0.3 4)
-       ("8 club ultimates (sync)" "'(((5 3) (5 2) - -) (- - (3 1) (3 0)))" "pair-of-jugglers" 0.35 0.3 4)
+       ("8 club ultimates (sync)" "'(((7 3) (7 2) - -) (- - (5 1) (5 0)) ())" "pair-of-jugglers" 0.24 0.3 4)
        ("9 club doubles" "(reorder-throws (4hss->sexp \"b7\") '(0 2 1 3) '(0 1 2 3))" "pair-of-jugglers" 0.16 0.25 4)
        ("9 club ultimates" "(4hss->sexp \"9\")" "pair-of-jugglers" 0.16 0.25 4)
        ("9 club ultimates (4/5)" "(passing-ss->sexp \"<4px 4px|5p 5p>\")" "pair-of-jugglers" 0.3 0.25 4)
@@ -328,9 +340,11 @@
 ((5 5) (5 2) - - - - - -) 
 (- - - (5 1) (7 5) - (5 0)) 
 (- - (5 3) - - (5 4) - (5 6))
-((5 7) (5 2)) 
+((5 7) (5 2) - - - - - -) 
 (- - - (5 1) (5 0) - (7 7)) 
-(- - (5 3) - - (5 4) - (5 6)))" "4-man-feed" 0.22 0.25 6)
+(- - (5 3) - - (5 4) - (5 6)))" "4-man-feed" 0.22 0.25 3)
+       
+       ("10-club feed as 6-hand siteswap" "(reorder-throws (6hss->sexp \"9d9 99b 9b9 d99\") '(0 2 4 1 3 5) '(1 2 5 0 3 4))"  "(juggler-circle 3 2.5)" 0.11 0.25 6)
        )
      
      '(("-- Dropbacks --"))
@@ -348,11 +362,7 @@
                      "(dropback-line 1 3.0 1.0 #t #t)"
                      0.13 0.25 2)
        
-       ("9-club line (aa7999)" "(6hss->sexp \"aa7999\")" 
-                     "(dropback-line 1 3.0 1.0 #t #t)"
-                     0.13 0.25 2)
-       
-       ("10-club line (d999aa)" "(6hss->sexp \"d999aa\")" 
+       ("10-club line (d999aa)" "(reorder-throws (6hss->sexp \"d999aa\") '(0 2 4 1 3 5) '(0 3 4 1 2 5))"
                      "(dropback-line 1 3.0 1.0 #t #t)"
                      0.13 0.25 2)
        
@@ -363,6 +373,10 @@
        ("3 man 10-club ultimate line" "(6hss->sexp \"a\")" 
                      "(dropback-line 1 3.0 0.0 #t #t)"
                      0.13 0.25 2)
+       
+       ("Canoe"  "#;((list (sync 8 5 3 even?) '() (sync 8 4 -1 odd?))) `(((5 3) - (5 5 antihurry) - (5 7) - (5 1 antihurry) -) () (- (4 0) - (4 2) - (4 4) - (4 6)))"
+                        "(append (dropback-line 1 3.0 1.0 #t #f) (translate-hands (rotate-hands (dropback-line 1 3.0 1.0 #t #f) pi) 7 3 0))"
+                        0.27 0.3 2)
        )
        
      '(("-- Large Patterns --"))
