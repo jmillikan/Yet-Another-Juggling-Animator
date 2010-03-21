@@ -14,7 +14,6 @@
            "example-patterns.ss"
            "juggling-canvas.ss")
   
-  (define w #f) ; screw it.
   (define main-window
     (class* frame% ()
       (inherit show set-status-text)
@@ -81,12 +80,11 @@
       
       (define ed-win (instantiate editor-window% (this)))
       
-      (define pattern-forms (instantiate pattern-forms% (control-panel)))
-      (instantiate-view-controls canvas control-panel)
+      (define pattern-forms (instantiate pattern-forms% (control-panel this)))
+      (instantiate-view-controls canvas control-panel this)
       
       (define/public (set-error e)
-        (set-status-text e)
-        #;(send error-box set-value e))
+        (set-status-text e))
       
       (define/public (clear-error)
         (set-status-text ""))
@@ -197,6 +195,7 @@
     (class* tab-panel% ()
       (inherit get-selection add-child delete-child)
       (init-field w)
+      (init-field window)
       (super-instantiate ((list "Easy Mode" "Hard Mode") w) 
         (callback (lambda (c x) (send this change-tab)))
         (min-width 400))
@@ -213,12 +212,12 @@
           (set! current-form new-form)))
       
       (define siteswap-form
-        (instantiate siteswap-form% (this)))
+        (instantiate siteswap-form% (this window)))
       
       (define current-form siteswap-form)
       
       (define scheme-form
-        (instantiate scheme-form% (this)))
+        (instantiate scheme-form% (this window)))
       
       ; Is there a sane way to do this?
       (delete-child scheme-form)))
@@ -248,13 +247,13 @@
       
       (instantiate button% 
         ("Run" this (λ _ 
-                      (with-handlers ((exn:fail? (λ (e) (send w set-error (exn-message e)))))
+                      (with-handlers ((exn:fail? (λ (e) (send juggling-window set-error (exn-message e)))))
                         (let*   
                             ((beat-value (string->number (send input-beat get-value)))
                              (dwell-value (string->number (send input-dwell get-value)))
                              (sexp-pattern (pattern-lambda (send input-pattern get-value)))
                              (pattern (sexp->pattern sexp-pattern beat-value dwell-value (hands-lambda) (hold-beats-thunk))))
-                          (send w show-pattern
+                          (send juggling-window show-pattern
                                 pattern
                                 (hands-lambda))))))
         (stretchable-width #f))))
@@ -262,13 +261,14 @@
   (define siteswap-form% 
     (class* vertical-panel% ()
       (init-field parent)
+      (init-field window)
       (super-instantiate (parent) (alignment '(center center)) (stretchable-height #f))
       (instantiate pattern-line% ("Siteswap" "0.25" "0.16" "744" 2hss->sexp (λ _ 2) 
-                                             (λ _ pair-of-hands) w 2-ss-examples this))
+                                             (λ _ pair-of-hands) window 2-ss-examples this))
       (instantiate pattern-line% ("4-hand SS" "0.15" "0.2" "966" 4hss->sexp (λ _ 4) 
-                                              (λ _ pair-of-jugglers) w 4-hand-examples this))
+                                              (λ _ pair-of-jugglers) window 4-hand-examples this))
       (instantiate pattern-line% ("Synchronous" "0.25" "0.20" "(6x,4)*" sync-ss->sexp (λ _ 2) 
-                                                (λ _ (juggler-circle 2 3.0)) w syncss-examples this))))
+                                                (λ _ (juggler-circle 2 3.0)) window syncss-examples this))))
   
   ; For now, the stuff in the evals can see/do everything
   (define-namespace-anchor nsa)  
@@ -279,6 +279,7 @@
   (define scheme-form% 
     (class* vertical-panel% ()
       (init-field parent)
+      (init-field window)
       (super-instantiate (parent) (alignment '(center center)) (stretchable-height #f))
       
       (define hands-select (instantiate combo-field% ("Juggler/Hand List" hands-examples this) (min-width 250) (init-value "") (stretchable-width #t)))
@@ -289,16 +290,16 @@
       (define sexp-line (instantiate pattern-line% ("Scheme List" "0.35" "0.3" "" 
                                                                   (λ (s) (eval-string s)) 
                                                                   (λ _ (string->number (send hold-length get-value)))
-                                                                  get-hands w sexp-examples this)))
+                                                                  get-hands window sexp-examples this)))
       (set! hold-length  (instantiate text-field% ("H" sexp-line) (init-value "2")))
       
-      (instantiate pattern-line% ("6-hand SS" "0.10" "0.2" "a" 6hss->sexp (λ _ 6) get-hands w 6-ss-examples this))
+      (instantiate pattern-line% ("6-hand SS" "0.10" "0.2" "a" 6hss->sexp (λ _ 6) get-hands window 6-ss-examples this))
       
       
       (instantiate pattern-line% ("Passing SS" "0.28" "0.20" "<3p 3 3|3p 3 3>" passing-ss->sexp (λ _ 2) 
-                                               get-hands w passing-ss-examples this))))
+                                               get-hands window passing-ss-examples this))))
   
-  (define (instantiate-view-controls c h)
+  (define (instantiate-view-controls c h window)
     (let ((v (instantiate vertical-panel% (h) (alignment '(center center)) (stretchable-width #f) (min-width 200))))
       (let ((h (instantiate horizontal-panel% (v)
                  (alignment '(center center)))))
@@ -309,7 +310,7 @@
       (instantiate combo-field% ("Object" (list "ball" "ring" "club") v) 
         (callback 
          (λ (l v) 
-           (with-handlers ((exn:fail? (λ (e) (send w set-error (exn-message e)))))
+           (with-handlers ((exn:fail? (λ (e) (send window set-error (exn-message e)))))
              (send c set-model 
                    (send l get-value))))))
       (let* ((h-time (instantiate horizontal-panel% (v) (alignment '(center center)) (stretchable-width #f)))
@@ -319,5 +320,5 @@
                                                (send c scale-time (call-with-input-string (send time-input get-value) read)))))
           (stretchable-width #f)))))
   
-  (set! w (make-object main-window))
+  (define w (make-object main-window))
   (send w show #t))

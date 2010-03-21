@@ -296,16 +296,23 @@
        ("7 club 2-count" "(passing-ss->sexp \"<4p 3|4p 3>\")" "pair-of-jugglers" 0.35 0.3 2)
        ("7 club 2-count crossing" "(passing-ss->sexp \"<4p 3|3 4p>\")" "pair-of-jugglers" 0.35 0.3 2)
        ("7 singles (six-beat)" 
-      "#;(7-club singles) '(((11 3) - - -) () (- (10 0)) (- - (11 1)) () (- - - (10 2)))" "pair-of-jugglers" 0.11 0.25 4)
+      "'(((11 3) - - -) () (- (10 0)) (- - (11 1)) () (- - - (10 2)))" "pair-of-jugglers" 0.11 0.25 4)
        ("7 ultimates" "(4hss->sexp \"7\")" "pair-of-jugglers" 0.16 0.25 4)
        ("7 club 3-count" "(4hss->sexp \"966\")" "pair-of-jugglers" 0.16 0.25 4)
        ("7 club 4-count" "(passing-ss->sexp \"<5p 3 3 3|3 3 5p 3>\")" "pair-of-jugglers" 0.35 0.3 4)
+       ("Oddz Goddz" "'(* ((5 3 antihurry) - (2 3 hurry) -) ((2 1 hurry) - - (5 1 antihurry)))" "pair-of-jugglers" 0.35 0.25 2)
+       ("7 club techno (3-count singles)" "'(* ((3 3) (2 0 hurry) - (2 2 hurry)) ((2 1 hurry) - (3 0) (2 2 hurry)))" "pair-of-jugglers" 0.36 0.25 2)
+       ("7 club 3-count popcorn (French Techno)" "(4hss->sexp \"786\")" "pair-of-jugglers" 0.16 0.25 4)
+       ("7 club PPS 1" "(passing-ss->sexp \"<4p 4p 3|4p 3 3p>\")" "pair-of-jugglers" 0.35 0.28 2)
+       ("7 club PPS 2" "(reorder-throws (passing-ss->sexp \"<4p 4p 3|4p 3 3p>\") '(0 1 3 2))"  "pair-of-jugglers" 0.35 0.28 2)
+       ("7 club PPS Doubles vs. Singles" "(passing-ss->sexp \"<3p 3p 3|4p 4 4p>\")" "pair-of-jugglers" 0.35 0.28 2)
+       
        ("8 club singles" "'(((2 3) (2 0) (2 1) (2 2)))" "pair-of-jugglers" 0.6 0.3 4)
        ("8 club doubles" "`(((7 3) - (7 1) -) (- (5 0) - (5 2)) ())" "pair-of-jugglers" 0.2 0.2 4)
        ("8 club triples" "(passing-ss->sexp \"<5p 3|5p 3>\")" "pair-of-jugglers" 0.35 0.3 4)
        ("8 club ultimates (async)" "(passing-ss->sexp \"<5p 5p|3p 3p>\")" "pair-of-jugglers" 0.35 0.3 4)
        ("8 club ultimates (sync)" "'(((7 3) (7 2) - -) (- - (5 1) (5 0)) ())" "pair-of-jugglers" 0.24 0.3 4)
-       ("9 club doubles" "(reorder-throws (4hss->sexp \"b7\") '(0 2 1 3) '(0 1 2 3))" "pair-of-jugglers" 0.16 0.25 4)
+       ("9 club doubles" "(reorder-throws (4hss->sexp \"b7\") '(0 2 1 3))" "pair-of-jugglers" 0.16 0.25 4)
        ("9 club ultimates" "(4hss->sexp \"9\")" "pair-of-jugglers" 0.16 0.25 4)
        ("9 club ultimates (4/5)" "(passing-ss->sexp \"<4px 4px|5p 5p>\")" "pair-of-jugglers" 0.3 0.25 4)
        ("10 club doubles" "(passing-ss->sexp \"<5p 5|5p 5>\")" "pair-of-jugglers" 0.3 0.25 4))
@@ -334,8 +341,8 @@
        ("747 Feed" "747-feed" "4-man-feed"  0.16 0.25 4)
        ("744 vs 747 Feed" "777-747-744-feed" "4-man-feed" 0.16 0.25 4)
        ("7 vs 966 Feed" "777-feed-3s" "4-man-feed" 0.16 0.25 4)
-       ("10 Club Gorilla" "(reorder-throws (6hss->sexp \"a\") '(0 2 4 1 3 5) '(1 5 3 0 2 4))" "4-man-feed" 0.11 0.25 6)
-       ("10 Club Defensive Gorilla" "(reorder-throws (6hss->sexp \"a\") '(0 2 4 1 3 5) '(0 5 3 1 2 4))" "4-man-feed" 0.11 0.25 6)
+       ("10 Club Gorilla" "(reorder-throws (6hss->sexp \"a\") '(0 1 5 2 3 4))" "4-man-feed" 0.11 0.25 6)
+       ("10 Club Defensive Gorilla" "(reorder-throws (6hss->sexp \"a\") '(0 1 4 3 2 5))" "4-man-feed" 0.11 0.25 6)
        ("Split Gorilla" "'(
 ((5 5) (5 2) - - - - - -) 
 (- - - (5 1) (7 5) - (5 0)) 
@@ -344,7 +351,7 @@
 (- - - (5 1) (5 0) - (7 7)) 
 (- - (5 3) - - (5 4) - (5 6)))" "4-man-feed" 0.22 0.25 3)
        
-       ("10-club feed as 6-hand siteswap" "(reorder-throws (6hss->sexp \"9d9 99b 9b9 d99\") '(0 2 4 1 3 5) '(1 2 5 0 3 4))"  "(juggler-circle 3 2.5)" 0.11 0.25 6)
+       ("10-club feed as 6-hand siteswap" "(6hss->sexp \"9d9 99b 9b9 d99\")" "(juggler-circle 3 2.5)" 0.11 0.25 6)
        )
      
      '(("-- Dropbacks --"))
@@ -362,11 +369,11 @@
                      "(dropback-line 1 3.0 1.0 #t #t)"
                      0.13 0.25 2)
        
-       ("10-club line (d999aa)" "(reorder-throws (6hss->sexp \"d999aa\") '(0 2 4 1 3 5) '(0 3 4 1 2 5))"
+       ("10-club line (d999aa)" "(reorder-throws (6hss->sexp \"d999aa\") '(0 1 3 2 5 4))"
                      "(dropback-line 1 3.0 1.0 #t #t)"
                      0.13 0.25 2)
        
-       ("3 man 8-club ultimate line" "(reorder-throws (6hss->sexp \"8\") '(0 2 4 1 3 5) '(4 2 0 5 3 1))" 
+       ("3 man 8-club ultimate line" "(reorder-throws (6hss->sexp \"8\") '(4 5 2 3 0 1))" 
                      "(dropback-line 1 3.0 0.0 #t #t)"
                      0.15 0.3 2)
        
@@ -404,12 +411,12 @@
      (map (λ (ss)
            (list ss (format "(4hss->sexp \"~a\")" ss) "pair-of-jugglers" 0.16 0.25 4)) 4-hand-examples)
      (map (λ (ss)
-           (list (format "~a (RLRL)" ss) (format "(reorder-throws (4hss->sexp \"~a\") '(0 2 1 3) '(1 2 3 0))" ss) "pair-of-jugglers" 0.16 0.25 4)) 4-hand-examples)
+           (list (format "~a (RLRL)" ss) (format "(4h-rlrl (4hss->sexp \"~a\"))" ss) "pair-of-jugglers" 0.16 0.25 4)) 4-hand-examples)
      '(("-- 6-hand siteswaps --"))
      (map (λ (ss)
            (list ss (format "(6hss->sexp \"~a\")" ss) "(juggler-circle 3 2.5)" 0.11 0.25 6)) 6-ss-examples)
      (map (λ (ss)
-           (list (format "~a (J2 reversed)" ss) (format "(reorder-throws (6hss->sexp \"~a\") '(0 2 4 1 3 5) '(0 3 4 1 2 5))" ss) "(juggler-circle 3 2.5)" 0.11 0.25 6)) 6-ss-examples)
+           (list (format "~a (J2 reversed)" ss) (format "(6h-reverse-j2 (6hss->sexp \"~a\"))" ss) "(juggler-circle 3 2.5)" 0.11 0.25 6)) 6-ss-examples)
      
      '(("== Boring Stuff ==")) ; "Boring Stuff..."
      ; 2-hand...
