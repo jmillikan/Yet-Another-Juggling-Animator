@@ -79,32 +79,43 @@
     (min (abs (- a1 a2))
          (abs (- (+ 360 (min a1 a2)) (max a1 a2)))))
   
-  
-  (define (get-throw-type options backwards?)
-    (match (option options 'orientation)
-      ('parallel 
-       (if backwards? 'backdrop 
-           (match (option options 'throw-type)
-             ('normal 'pass)
+  ; a is the different between the hand angle and throw angle
+  ; d is the distance to the (tentative) catch point.
+  (define (get-throw-type options a d)
+    (match (option options 'throw-type)
+             ('backdrop 'backdrop) ; I guess if you really wanted to force it for some reason...
+             ('self 'self) ; force self
              ('tomahawk 'tomahawk)
-             )))
-      ('perpendicular 'self)
-      ('default 'unknown)))
+             (_ 
+              (display (format "Unspecified. a: ~a d: ~a~n" a d))
+              (cond
+                  ((and (< a 70) (< d 1.5)) 'self)
+                  ((< 100 a) 'backdrop)
+                  (#t 'pass)))))
+  
+  (define (distance p1 p2)
+        (sqrt (+ (expt (- (position-x p1) (position-x p2)) 2)
+                 (expt (- (position-y p1) (position-y p2)) 2)
+                 (expt (- (position-z p1) (position-z p2)) 2))))
   
   ; Todo: Fix rotation for clubs^Wrings^Wclub backdrops
   (define (ball-toss-path-segment tf h1 h2 options)
-    (match-let* (((struct hand ((struct position (x1 y1 z1)) _ a1)) h1)
-                 ((struct hand (_ (struct position (x2 y2 z2)) a2)) h2)
+    (match-let* (((struct hand (p1 _ a1)) h1)
+                 ((struct position (x1 y1 z1)) p1)
+                 ((struct hand (_ p2 a2)) h2)
+                 ((struct position (x2 y2 z2)) p2)
                  (a1-deg (radians->degrees a1))
                  (a2-deg (radians->degrees a2))
                  
                  (angle-to-dest (get-angle (- x1 x2) (- y1 y2)))
-                 (backwards? 
-                  (begin #;(display (format "Checking angles for backwards. a1: ~a, dest: ~a, diff: ~a~n" a1-deg angle-to-dest (angle-diff a1-deg angle-to-dest)))
-                  (< 100 (angle-diff a1-deg angle-to-dest))))
+                 (distance-to-dest (distance p1 p2))
+                 (angle-diff-to-dest 
+                  (if (equal? h1 h2) 0 ; special case... angle-to-dest is undefined because of matching points.
+                      (angle-diff a1-deg angle-to-dest)))
                  
                  ; Ugh, at least now I can change this quickly
-                 (throw-type (get-throw-type options backwards?))
+                 
+                 (throw-type (get-throw-type options angle-diff-to-dest distance-to-dest))
                  
                  ; These five variables go a little ways toward styling the throw
                  ; catch and throw offset are z-offsets from the catch and throw point
@@ -221,25 +232,36 @@
                          (λ _ (values p1 (make-rotation -90 a1-deg -90) (make-rotation 0 10 0))))))
     
   (define (dwell-hold-path-segment tf h1 h-throw h-next catch-options throw-options)
-    (match-let* (((struct hand ((struct position (x2 y2 z2)) 
-                                (struct position (x1 y1 z1)) 
+    ; Holy hell, too much destructuring, too many bindings.
+    (match-let* (((struct hand (next-throw-point ; this is the hand where the dwell is...
+                                prev-catch-point 
                                 a1)) h1)
-                 ((struct hand ((struct position (x-throw y-throw _)) _ a2)) h-throw)
-                 ((struct hand (_ (struct position (x3 y3 _)) a-next)) h-next) 
+                 ((struct position (x2 y2 z2)) next-throw-point) 
+                 ((struct position (x1 y1 z1)) prev-catch-point)
+                 ((struct hand (prev-throw-point _ a2)) h-throw) ; the hand that was just throw from...
+                 ((struct position (x-throw y-throw _)) prev-throw-point)
+                 ((struct hand (_ next-catch-point a-next)) h-next) ; the hand that will be thrown to.
+                 ((struct position (x3 y3 _)) next-catch-point)
                  (a1-deg (radians->degrees a1))
                  (a2-deg (radians->degrees a2))
                  (a-next-deg (radians->degrees a-next))
-                 (angle-from-previous (get-angle (- x-throw x1) (- y-throw y1)))
-                 (angle-to-next (get-angle (- x2 x3) (- y2 y3)))                 
-                 (previous-backwards? (< 100 (angle-diff a2-deg angle-from-previous)))
-                 (next-backwards? (< 100 (angle-diff a-next-deg angle-to-next))) 
                  
-                 ; Ugh, at least now I can change this quickly
-                 (throw-type (get-throw-type catch-options
-                                             previous-backwards?))
-                 (next-throw-type (get-throw-type throw-options
-                                                  next-backwards?
-                                                  ))
+                 (angle-from-previous (get-angle (- x-throw x1) (- y-throw y1)))
+                 (angle-to-next (get-angle (- x2 x3) (- y2 y3)))                  
+                 
+                 (prev-angle-diff-to-dest
+                  (if (equal? h-throw h1) 0
+                      (angle-diff a2-deg angle-from-previous)))
+                 (prev-distance-to-dest (distance prev-throw-point prev-catch-point))
+                 
+                 
+                 (next-angle-diff-to-dest
+                  (if (equal? h1 h-next) 0
+                      (angle-diff a1-deg angle-to-next)))
+                 (next-distance-to-dest (distance next-throw-point next-catch-point))
+                 
+                 (throw-type (get-throw-type catch-options prev-angle-diff-to-dest prev-distance-to-dest))
+                 (next-throw-type (get-throw-type throw-options next-angle-diff-to-dest next-distance-to-dest))
                  
                  ;; TODO: UNSCREW ALL OF THIS
                  (catch-rotation (match throw-type
