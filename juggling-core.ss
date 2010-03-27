@@ -87,7 +87,6 @@
              ('self 'self) ; force self
              ('tomahawk 'tomahawk)
              (_ 
-              (display (format "Unspecified. a: ~a d: ~a~n" a d))
               (cond
                   ((and (< a 70) (< d 1.5)) 'self)
                   ((< 100 a) 'backdrop)

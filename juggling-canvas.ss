@@ -304,7 +304,7 @@
                              (unless paint-queued?
                                (set! paint-queued? #t)
                                (send this refresh)))
-                           30)) ; max 20 fps... Slows memory leakage
+                           10)) ; max 20 fps... Slows memory leakage
       
       (define/override (on-paint)
         (when internal-pattern
