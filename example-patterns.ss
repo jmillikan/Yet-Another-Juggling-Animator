@@ -317,7 +317,7 @@
        ("9 club ultimates (4/5)" "(passing-ss->sexp \"<4px 4px|5p 5p>\")" "pair-of-jugglers" 0.3 0.25 4)
        ("10 club doubles" "(passing-ss->sexp \"<5p 5|5p 5>\")" "pair-of-jugglers" 0.3 0.25 4))
      
-     '(("-- 3 man feeds --"))
+     '(("-- Feeds et cetera --"))
      '(("Martin's Madness" "
 `(*
 (- (3 3) (3 1) - (3 5) -) 
@@ -352,7 +352,39 @@
 (- - (5 3) - - (5 4) - (5 6)))" "4-man-feed" 0.22 0.25 3)
        
        ("10-club feed as 6-hand siteswap" "(6hss->sexp \"9d9 99b 9b9 d99\")" "(juggler-circle 3 2.5)" 0.11 0.25 6)
-       )
+       ("Complete PPS Feed" "`(* 
+((3 3) - (3 1) - (3 7) - (3 5) -) 
+(- (3 6) - (3 2) - (3 4) - (3 0)) 
+((3 1) - (3 5) - (3 3) - (3 7) -)
+)" "(append pair-of-jugglers
+  (translate-hands pair-of-jugglers 4.0 0 0))" 0.35 0.25 2)
+       ("Complete Madness"
+        "`(*
+((3 3) -       (3 0) -       (3 7) (1 4) (3 4) -) 
+((1 1) (3 6) - (2 2 hurry)      (3 5) -        - (3 1)) 
+(- (3 0)       (3 4) -       - (3 2)        (2 7 hurry) -)
+((3 3) -       (1 3) (3 1) (3 7) -       - (3 5)) 
+(- (3 6)       - (3 2)       - (2 4 hurry)        (3 0) (1 6)) 
+((2 1 hurry) -       (3 4) -       (3 3) -        (3 7) -) 
+)"  "(append pair-of-jugglers
+  (translate-hands pair-of-jugglers 4.0 0 0))" 0.35 0.2 2)
+     
+     ("6-man Clock"
+      "`( 
+((3 1) - (3 11) - (3 9) - (3 7) - (3 5) - (3 3) -)
+,(sync 12 3 -1 odd?)
+((3 11) - (3 9) - (3 7) - (3 5) - (3 3) - (3 1) - )
+,(sync 12 3 -1 odd?)
+((3 9) - (3 7) - (3 5) - (3 3) - (3 1) - (3 11) -)
+,(sync 12 3 -1 odd?)
+((3 7) - (3 5) - (3 3) - (3 1) - (3 11) - (3 9) -)
+,(sync 12 3 -1 odd?)
+((3 5) - (3 3) - (3 1) - (3 11) - (3 9) - (3 7) -)
+,(sync 12 3 -1 odd?)
+((3 3) - (3 1) - (3 11) - (3 9) - (3 7) - (3 5) -)
+,(sync 12 3 -1 odd?)
+)"
+      "(juggler-circle 6 3.0)" 0.35 0.25 2))
      
      '(("-- Dropbacks --"))
      
