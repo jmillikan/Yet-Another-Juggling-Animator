@@ -29,6 +29,7 @@
             (append (cdr sexp-pattern) (star-pattern (twostar-pattern (cdr sexp-pattern)))))
            (#t sexp-pattern)))
   
+  ; For now, this is going to let hands-lst just sort of be echoed
   (define (sexp->pattern sexp-pattern beat-value dwell-value hands-lst hold-beats)   
     (sexp->pattern-internal 
      (expand-sexp-stars sexp-pattern)
@@ -151,18 +152,7 @@
                (build-segments from-hand to-hand next-hand length options next-options))
              (loop-throws (cdr throw-rest))))))
     
-    (make-pattern
-     ; Do something uncomplicated with the results of this horrible recursion...
-     (map
-      (λ (o)
-        (match o ((list delay _ first-throw throw-lst first-hand )
-                  (let ((start-hand (list-ref hands-lst first-hand)))
-                    (make-path-state 0 (cons 
-                                        ; Hold until the first throw we know of...
-                                        (dwell-hold-path-segment (* delay beat-value) start-hand start-hand start-hand '() '()) ; >_< TODO: Replace last start-hand with first destination hand...
-                                        (apply circular-list 
-                                               (build-loop-segments
-                                                (reverse throw-lst)))))))))
+    (define (trace-throws)
       ; horrible recursion...
       (let* ((c-pattern (apply circular-list sexp-pattern))
              (number-of-hands (length (car c-pattern)))
@@ -216,7 +206,34 @@
                                              c-pattern 
                                              updated-objects
                                              (cdr throws-this-beat) 
-                                             (add1 hand))))))))))))))
+                                             (add1 hand))))))))))))
+    
+    (make-pattern
+     ; Do something uncomplicated with the results of this horrible recursion...
+     (map
+      (λ (o)
+        (match o ((list delay _ first-throw throw-lst first-hand )
+                  (let ((start-hand (list-ref hands-lst first-hand)))
+                    (make-path-state 0 (cons 
+                                        ; Hold until the first throw we know of...
+                                        (dwell-hold-path-segment (* delay beat-value) start-hand start-hand start-hand '() '()) ; >_< TODO: Replace last start-hand with first destination hand...
+                                        (apply circular-list 
+                                               (build-loop-segments
+                                                (reverse throw-lst)))))))))
+      (trace-throws))
+     
+     ; TODO: Somehow actually get juggler movement in here. For now the data structures are in place.
+     (map
+      (λ (h)
+        (if (path-state? h) h
+            (make-path-state 0
+                             (circular-list
+                              (make-juggler-path-segment
+                               ; a long time... Doesn't really matter. Could be anything larger than about .1s.
+                               100 
+                                ; completely ignore the time...
+                               (λ _ h))))))
+      hands-lst)))
   
   (define (throw-value throw)
     (match throw 

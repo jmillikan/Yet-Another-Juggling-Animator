@@ -2,8 +2,6 @@
   
   (require srfi/1)
   
-  ; Details for how to animate hands and figures might come later. Allowances are made in the granularity of the data.
-  
   ; Innermost stored representation of a single part of a ball path, e.g. the air segment of a toss, the hand motion to a throw, etc. - [0, t] is the domain for a parametric function giving position x,y,z and two rotations that are applied in order r1x r1y r1z r2x r2y r2z because I'm bad at math.
   ; This "should" allow floor bounces, wall bounces, items with different drags... 
   
@@ -15,8 +13,13 @@
     (x y z)
     #:transparent)
   
-  ; Also the lowest-level language it will possible to accept for patterns, probably via read or eval. (Free config language!)
+  ; Also the lowest-level language it will possible to accept for patterns, probably via read or eval.
   (define-struct path-segment
+    (duration pos-fn)
+    #:transparent)
+  
+  ; Identical to path-segment, technically, but pos-fn is of a slightly different type.
+  (define-struct juggler-path-segment
     (duration pos-fn)
     #:transparent)
   
@@ -29,7 +32,7 @@
   
   ; A pattern will just be a list of starting positions, then, I guess...
   (define-struct pattern
-    (positions)
+    (object-positions juggler-positions)
     #:transparent)
   
   (define-struct hand
@@ -262,12 +265,10 @@
                  (throw-type (get-throw-type catch-options prev-angle-diff-to-dest prev-distance-to-dest))
                  (next-throw-type (get-throw-type throw-options next-angle-diff-to-dest next-distance-to-dest))
                  
-                 ;; TODO: UNSCREW ALL OF THIS
                  (catch-rotation (match throw-type
                                    ('pass 90)
                                    ('tomahawk 0)
                                    (_ 10)))
-                 ; raise the catch point a bit for all throws
                  (catch-offset (match throw-type
                                  ('pass 0.8)
                                  ('tomahawk 0.0)
@@ -316,30 +317,56 @@
                                            (set-path-state-segment-list! ps (cdr seg-lst))
                                            (advance-path-state! ps t-leftover))))))))
   
+  ; I keep hoping that these two will diverge in some useful way. For now,  though, the lambdas involved are still of different types...
+  (define (advance-juggler-state! js t-tick)
+    (match js ((struct path-state (t-offset seg-lst)) ; path-state we are advancing
+               (match (car seg-lst) ((struct juggler-path-segment (duration _)) ; Current segment
+                                     (if (< (+ t-offset t-tick) duration)
+                                         ; Still in the same segment - add t-tick to t-offset
+                                         (set-path-state-t-offset! js (+ t-offset t-tick))
+                                         ; Not in the same segment. shave remaining time off the tick and start the next segment.
+                                         (let ((t-leftover (- t-tick (- duration t-offset))))
+                                           (set-path-state-t-offset! js 0)
+                                           (set-path-state-segment-list! js (cdr seg-lst))
+                                           (advance-juggler-state! js t-leftover))))))))
+  
   (define (advance-pattern! patt t-tick)
-    (map (lambda (path-seg) (advance-path-state! path-seg t-tick)) (pattern-positions patt)))
+    (map (lambda (path-seg) (advance-path-state! path-seg t-tick)) (pattern-object-positions patt))
+    (map (lambda (juggler-seg) (advance-juggler-state! juggler-seg t-tick)) (pattern-juggler-positions patt)))
   
   ; Export the examination of the pattern (instead of exporting all of the data structures)
   ; Apply f to each object, giving object & position
   ; f is (f object position)
-  (define (map-pattern f pattern objects)
+  (define (map-pattern-objects f pattern objects)
     (map (lambda (ps o)
            (match ps ((struct path-state (t (cons (struct path-segment (_ pos-f)) _)))
                       (let-values (((pos rot spin) (pos-f t)))
                         (f o pos rot spin)))))
-         (pattern-positions pattern) objects))
+         (pattern-object-positions pattern) objects))
+  
+  ; juggler here actually means one hand... (Thus 'h' in the middle)
+  (define (map-pattern-jugglers f pattern jugglers)
+    (map (lambda (juggler-st juggler)
+           (match juggler-st ((struct path-state (t (cons (struct juggler-path-segment (_ pos-f)) _)))
+                      (let-values (((h) (pos-f t)))
+                        (f juggler h)))))
+         (pattern-juggler-positions pattern) jugglers))
   
   (provide 
    (struct-out position)
    (struct-out rotation)
    (struct-out pattern)
    (struct-out path-segment)
+   (struct-out juggler-path-segment)
    (struct-out path-state)
    (struct-out hand)
    ; todo: Figure out how to export less?
    
    ball-toss-path-segment dwell-hold-path-segment hold-path-segment
-   advance-path-state! advance-pattern! map-pattern
+   advance-path-state! advance-pattern! 
+   
+   map-pattern-objects
+   map-pattern-jugglers
    
    radians->degrees
    angle-diff

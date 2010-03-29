@@ -44,6 +44,11 @@
       (define grid-size 100.0)
       (define grid-unit 1.0)
       
+      (define warning-f (λ _ '()))
+      (define/public (set-warning-f f)
+        (if (procedure? f) (set! warning-f f)
+            (error "Warning procedure must be a procedure")))
+      
       (define/public (scale-time x)
         (if (number? x)
             (set! view-time-scale x)
@@ -155,7 +160,7 @@
            (unless internal-pattern
              (set! quadric (gl-new-quadric))
              (set! last-ms (current-milliseconds))
-             (set! internal-pattern (make-pattern '()))
+             (set! internal-pattern (make-pattern '() '()))
              (create-objects)
              (set! current-model ball-model)
              
@@ -277,12 +282,11 @@
         (if (pattern? p)
             (begin
               ; BUG: This pattern can't be shown for some reason until it has been advance-pattern!ed, at least once, even with 0 ms...
-              (set! internal-pattern p)
-              (advance-pattern! internal-pattern 0))
+              (set! internal-pattern p))
             
             (error "Internal failure: That's really just not a pattern.~n")))
       
-      (define/public (set-jugglers j set-warning)
+      #;(define/public (set-jugglers j set-warning)
         #;(set! jugglers (jugglers-lambda j))
         (with-gl-context
          (lambda ()
@@ -292,7 +296,7 @@
                '())
            (set! jugglers-static (gl-gen-lists 1))
            (gl-new-list jugglers-static 'compile)          
-           ((jugglers-lambda j set-warning))
+           ((jugglers-lambda j set-warning)) ; Nothing in here right now.
            (gl-end-list))))
       
       (define jugglers-static #f)
@@ -329,7 +333,7 @@
                (gl-rotate view-roty 0.0 1.0 0.0)
                (gl-rotate view-rotz 0.0 0.0 1.0))
              
-             (map-pattern 
+             (map-pattern-objects 
               (lambda (prop pos rot spin)
                 (match-let
                     (((list size r g b) prop)
@@ -358,6 +362,8 @@
              (if jugglers-static
                  (gl-call-list jugglers-static)
                  #f)
+             
+             (draw-jugglers (map-pattern-jugglers (λ (j h) h) internal-pattern (circular-list 'cake)) warning-f)
              
              ; Show a nice grid (size determined by 2 x grid-size, each square is grid-unit across.)
              (gl-material-v 'front-and-back
@@ -411,12 +417,10 @@
                          (l1 (rotate (make-position -0.5 0.0 0.0) a1))
                          (l2 (rotate (make-position -0.5 0.0 0.0) a2))
                          (butt-center
-                          (begin
-                            #;(display (format "l1: ~a~nl2: ~a~n" l1 l2))
-                            (make-position
-                             (+ x-center (position-x l1) (position-x l2))
-                             (+ y-center (position-y l1) (position-y l2))
-                             z-center))))
+                          (make-position
+                           (+ x-center (position-x l1) (position-x l2))
+                           (+ y-center (position-y l1) (position-y l2))
+                           z-center)))
                          
                       
                       (begin
@@ -429,11 +433,9 @@
                    (find values
                          (map
                           (λ (p2)
-                            #;(display (format "Looking for collisions at ~a and ~a~n" p1 p2))
+                            
                             (if (and (not (eq? p1 p2))(< (butt-distance p1 p2) 0.3))
-                                (begin 
-                                  #;(display (format "Collision found~n"))
-                       `(collision ,p1 ,p2))
+                                `(collision ,p1 ,p2)
                                 #f))
                           butt-positions)))
                  butt-positions))))
@@ -443,9 +445,7 @@
       (define/public (set-butt-collisions b)
         (set! show-butt-collisions? b))
       
-      (define (jugglers-lambda hands-lst set-warning)
-        (lambda ()     
-          
+      (define (draw-jugglers hands-lst set-warning)
           (let loop-pairs ((lst hands-lst) (centers '()))
             (match lst
               ((list-rest (struct hand ((struct position (x1 y1 z1)) c1 a1)) 
@@ -479,7 +479,6 @@
                 ((list collision (struct position (x1 y1 z1))
                        (struct position (x2 y2 z2)))
                  (begin
-                   #;(display (format "Showing butt collisions at ~a,~a,~a~n" x1 y1 z1))
                    (set-warning (format "Butt collision detected at around ~a,~a,~a! Shown in red." x1 y1 z1))
                    (gl-push-matrix)
                    (gl-translate x1 y1 (+ 0.9 z1))
@@ -489,10 +488,9 @@
                    (gl-sphere quadric 0.5 10 10)
                    (gl-pop-matrix)))
                 
-                (_ #f #;(display (format "Found no collisions. ~a~n" (butt-collisions hands-lst)))))
+                (_ #f))
                     
                     
-              #f)
-          ))
+              #f))
       
       (super-instantiate () (style '(gl no-autoclear))))))

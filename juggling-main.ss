@@ -74,9 +74,7 @@
       
       (define/public (show-pattern p j)
         (send canvas set-pattern p)
-        (send canvas set-jugglers j
-              ; allow jugglers-lambda or related functions to throw warnings about juggler placement...
-              (λ (s) (send this set-error s))))
+        (send canvas set-warning-f error #;(λ (s) (send this set-error s))))
       
       (define ed-win (instantiate editor-window% (this)))
       
@@ -84,7 +82,8 @@
       (instantiate-view-controls canvas control-panel this)
       
       (define/public (set-error e)
-        (set-status-text e))
+        (error e)
+        #;(set-status-text e))
       
       (define/public (clear-error)
         (set-status-text ""))
