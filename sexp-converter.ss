@@ -74,10 +74,7 @@
   (define (sexp->pattern-internal sexp-pattern beat-value dwell-value hands-lst hold-beats)    
     (define (build-segments throw-hand-i catch-hand-i next-hand-i throw-length throw-options next-options)
       (let*
-          ((throw-hand (deref-hand throw-hand-i hands-lst))
-           (catch-hand (deref-hand catch-hand-i hands-lst))
-           (next-hand (deref-hand next-hand-i hands-lst)) ; one hand into the future for the dwell hold...
-           (throw-type
+          ((throw-type
             (cond 
               ((has? throw-options 'tomahawk) 'tomahawk)
               (#t 'normal)))
@@ -90,7 +87,7 @@
                     (or (<= throw-length hold-beats) ; Long dwell on at least SOME 2s. Will still look a bit funky.
                         (has? throw-options 'hold)))
                (begin 
-                 (list (hold-path-segment (* beat-value throw-length) throw-hand '()))))
+                 (list (hold-path-segment (* beat-value throw-length) throw-hand-i '()))))
               (#t
                (let* (
                       ; In the sexp format, these will have the "correct" throw length
@@ -109,9 +106,9 @@
                  (list    
                   (ball-toss-path-segment 
                    toss-length
-                   throw-hand catch-hand
+                   throw-hand-i catch-hand-i
                    `((throw-type ,throw-type)))
-                  (dwell-hold-path-segment dwell-length catch-hand throw-hand next-hand
+                  (dwell-hold-path-segment dwell-length catch-hand-i throw-hand-i next-hand-i
                                            `((throw-type ,throw-type))
                                            `((throw-type ,next-throw-type)))))))))
     
@@ -212,17 +209,16 @@
      ; Do something uncomplicated with the results of this horrible recursion...
      (map
       (λ (o)
-        (match o ((list delay _ first-throw throw-lst first-hand )
-                  (let ((start-hand (list-ref hands-lst first-hand)))
-                    (make-path-state 0 (cons 
+        (match o ((list delay _ first-throw throw-lst start-hand-i)
+                  (make-path-state 0 (cons 
                                         ; Hold until the first throw we know of...
-                                        (dwell-hold-path-segment (* delay beat-value) start-hand start-hand start-hand '() '()) ; >_< TODO: Replace last start-hand with first destination hand...
+                                        (dwell-hold-path-segment (* delay beat-value) start-hand-i start-hand-i start-hand-i '() '()) ; >_< TODO: Replace last start-hand with first destination hand...
                                         (apply circular-list 
                                                (build-loop-segments
-                                                (reverse throw-lst)))))))))
+                                                (reverse throw-lst))))))))
       (trace-throws))
      
-     ; TODO: Somehow actually get juggler movement in here. For now the data structures are in place.
+     ; All I'm doing for movement right now is allowing h to be a path-state of a hand
      (map
       (λ (h)
         (if (path-state? h) h
