@@ -7,8 +7,31 @@
     #;(pair-of-jugglers)
 `(,(make-hand (make-position -0.3 2.0 1.0) (make-position -0.6 2.05 1.1) 1.832595714594046)
   ,(make-hand (make-position 0.3 2.0 1.0) (make-position 0.6 2.0500000000000003 1.1) 1.308996938995747)
-  ,(make-path-state 0 (circular-list (make-juggler-path-segment 5 (lambda _ (lambda (t) (make-hand (make-position 0.3 -2.0 (+ (* 2 t) 1.0)) (make-position 0.6 -2.05 (+ (* 2 t) 1.1)) -1.3089969389957472))))))
-  ,(make-path-state 0 (circular-list (make-juggler-path-segment 5 (lambda _ (lambda (t) (make-hand (make-position -0.3 -2.0 (+ (* 2 t) 1.0)) (make-position -0.6 -2.05 (+ (* 2 t) 1.1)) -1.8325957145940461))))))))
+  ,(make-path-state 0 #f (circular-list (make-juggler-path-segment 5 (lambda _ (lambda (t) (make-hand (make-position 0.3 -2.0 (+ (* 2 t) 1.0)) (make-position 0.6 -2.05 (+ (* 2 t) 1.1)) -1.3089969389957472))))))
+  ,(make-path-state 0 #f (circular-list (make-juggler-path-segment 5 (lambda _ (lambda (t) (make-hand (make-position -0.3 -2.0 (+ (* 2 t) 1.0)) (make-position -0.6 -2.05 (+ (* 2 t) 1.1)) -1.8325957145940461))))))))
+  
+  
+  (define pair-of-jugglers-with-circler
+    (append
+     (list
+      (make-path-state 0 #f (circular-list
+                            (make-juggler-path-segment 
+                             (* 2 pi)
+                             (lambda _ (lambda (t)
+                                         (list-ref 
+                                          (translate-hands (rotate-hands pair-of-hands t) (* 2 (sin t)) (+ 2.0 (* 2 (cos t))) 0)
+                                          0))))))
+     
+      (make-path-state 0 #f (circular-list
+                            (make-juggler-path-segment 
+                             (* 2 pi)
+                             (lambda _ (lambda (t)
+                                         (list-ref 
+                                          (translate-hands (rotate-hands pair-of-hands t) (* 2 (sin t)) (+ 2.0 (* 2 (cos t))) 0)
+                                          1)))))))
+                                                       
+     #;(translate-hands (rotate-hands pair-of-hands pi) 0 2.0 0)
+            (translate-hands  pair-of-hands 0 -2.0 0)))
   
   (define 4-hand-examples
     '("5" "7" "9" "b" 
@@ -148,6 +171,7 @@
      (list (make-position -0.4 0 1.0) (make-position 0 0 1.0))))
   
   (define 4-man-feed (append (rotate-hands pair-of-hands (* pi 1.14)) (take (juggler-circle 15 6.0) 6)))
+  (define back-to-back (append j (translate-hands (rotate-hands j pi) 0 -2.5 0)))
   
   (define hands-examples
     (list "j #;(1 juggler - a pair of hands)"

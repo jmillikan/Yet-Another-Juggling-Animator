@@ -282,7 +282,9 @@
         (if (pattern? p)
             (begin
               ; BUG: This pattern can't be shown for some reason until it has been advance-pattern!ed, at least once, even with 0 ms...
-              (set! internal-pattern p))
+              (set! internal-pattern p)
+              (advance-pattern! p 0)
+              )
             
             (error "Internal failure: That's really just not a pattern.~n")))
       

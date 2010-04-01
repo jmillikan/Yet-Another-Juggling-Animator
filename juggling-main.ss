@@ -36,36 +36,36 @@
       
       (define examine-button (instantiate button% ("Edit" prefab-buttons 
                                                           (λ (_ e)
-                                  (with-handlers ((exn:fail? (λ (e) (set-error (exn-message e)))))
-                                    (let* 
-                                        ((sels (send prefab-list get-selections))) ; Should have 0 or 1 selections.
-                                      (if (= (length sels) 0)
-                                          (error "No pattern selected")
-                                          (match-let*
-                                              (((list pattern-name pattern-t jugglers-t beat dwell hold) 
-                                                (list-ref complete-patterns-internal (car sels))))
-                                            (send ed-win edit-pattern
-                                                  pattern-t jugglers-t beat dwell hold)
-                                            
-                                            (set! show-editor #t)
-                                            (send ed-win show #t)
-                                            (send mi-editor check #t)))))))))
+                                                            (with-handlers ((exn:fail? (λ (e) (set-error (exn-message e)))))
+                                                              (let* 
+                                                                  ((sels (send prefab-list get-selections))) ; Should have 0 or 1 selections.
+                                                                (if (= (length sels) 0)
+                                                                    (error "No pattern selected")
+                                                                    (match-let*
+                                                                        (((list pattern-name pattern-t jugglers-t beat dwell hold) 
+                                                                          (list-ref complete-patterns-internal (car sels))))
+                                                                      (send ed-win edit-pattern
+                                                                            pattern-t jugglers-t beat dwell hold)
+                                                                      
+                                                                      (set! show-editor #t)
+                                                                      (send ed-win show #t)
+                                                                      (send mi-editor check #t)))))))))
       
       (define run-button (instantiate button% 
-                               ("Run" prefab-buttons 
-                                (λ (_ e)
-                                  (with-handlers ((exn:fail? (λ (e) (set-error (exn-message e)))))
-                                    (let* 
-                                        ((sels (send prefab-list get-selections))) ; Should have 0 or 1 selections.
-                                      (if (= (length sels) 0)
-                                          (error "No pattern selected")
-                                          (match-let*
-                                              (((list pattern-name pattern-t jugglers-t beat dwell hold) 
-                                                (list-ref complete-patterns-internal (car sels)))
-                                               (hands (eval-string jugglers-t)))
-                                            (show-pattern 
-                                             (sexp->pattern (eval-string pattern-t) beat dwell hands hold)
-                                             hands)))))))))
+                           ("Run" prefab-buttons 
+                                  (λ (_ e)
+                                    (with-handlers ((exn:fail? (λ (e) (set-error (exn-message e)))))
+                                      (let* 
+                                          ((sels (send prefab-list get-selections))) ; Should have 0 or 1 selections.
+                                        (if (= (length sels) 0)
+                                            (error "No pattern selected")
+                                            (match-let*
+                                                (((list pattern-name pattern-t jugglers-t beat dwell hold) 
+                                                  (list-ref complete-patterns-internal (car sels)))
+                                                 (hands (eval-string jugglers-t)))
+                                              (show-pattern 
+                                               (sexp->pattern (eval-string pattern-t) beat dwell hands hold)
+                                               hands)))))))))
       
       (define canvas (instantiate juggling-canvas% (v-split) (min-width 600) (min-height 450)))
       
@@ -320,4 +320,4 @@
           (stretchable-width #f)))))
   
   (define w (make-object main-window))
-  (send w show #t))
+    (send w show #t))

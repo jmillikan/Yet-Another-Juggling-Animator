@@ -210,7 +210,7 @@
      (map
       (λ (o)
         (match o ((list delay _ first-throw throw-lst start-hand-i)
-                  (make-path-state 0 (cons 
+                  (make-path-state 0 #f (cons 
                                         ; Hold until the first throw we know of...
                                         (dwell-hold-path-segment (* delay beat-value) start-hand-i start-hand-i start-hand-i '() '()) ; >_< TODO: Replace last start-hand with first destination hand...
                                         (apply circular-list 
@@ -222,13 +222,13 @@
      (map
       (λ (h)
         (if (path-state? h) h
-            (make-path-state 0
+            (make-path-state 0 #f
                              (circular-list
                               (make-juggler-path-segment
                                ; a long time... Doesn't really matter. Could be anything larger than about .1s.
                                100 
                                 ; completely ignore the time...
-                               (λ _ h))))))
+                               (λ _ (λ _ h))))))) ;_;
       hands-lst)))
   
   (define (throw-value throw)
