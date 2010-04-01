@@ -415,7 +415,108 @@
 ((3 3) - (3 1) - (3 11) - (3 9) - (3 7) - (3 5) -)
 ,(sync 12 3 -1 odd?)
 )"
-      "(juggler-circle 6 3.0)" 0.35 0.25 2))
+      "(juggler-circle 6 3.0)" 0.35 0.25 2)
+     ("6-count feed" "(passing-ss->sexp \"<3p2 3 3p3 3 3p4 3|3p1 3 3 3 3 3|3 3 3p1 3 3 3|3 3 3 3 3p1 3>\")"  "(append
+  pair-of-hands
+  (translate-hands
+    (rotate-hands 
+       (juggler-line 3 2.5 0)
+pi)
+2.5 5 0)
+)" 0.35 0.25 2)
+     
+     ("Feed weave" "(passing-ss->sexp \"<3p2 3 3p3 3 3p4 3|3p1 3 3 3 3 3|3 3 3p1 3 3 3|3 3 3 3 3p1 3>\")"
+     "
+(append
+
+  pair-of-hands
+
+ (list 
+
+; Feedee 1
+(make-path-state 0 #f (circular-list
+    (make-juggler-path-segment   9.6
+       (lambda _ (lambda (t)
+          (car (translate-hands
+    (rotate-hands 
+       pair-of-hands
+     pi)
+(* 2.5 (sin (* (/ (* 2 pi) 9.6) t))) 
+(+ 5 (* 1.3 (sin (* (/ (* 4 pi) 9.6) t))))
+0
+)))))))
+(make-path-state 0 #f (circular-list
+    (make-juggler-path-segment   9.6
+       (lambda _ (lambda (t)
+          (cadr (translate-hands
+    (rotate-hands 
+       pair-of-hands
+     pi)
+(* 2.5 (sin (* (/ (* 2 pi) 9.6) t))) 
+(+ 5 (* 1.3 (sin (* (/ (* 4 pi) 9.6) t))))
+ 0
+)))))))
+
+
+; Feedee 3
+
+(make-path-state 0 #f (circular-list
+    (make-juggler-path-segment   9.6
+       (lambda _ (lambda (t)
+          (car (translate-hands
+    (rotate-hands 
+       pair-of-hands
+     pi)
+(* 2.5 (sin (+ (* 4/3 pi) (* (/ (* 2 pi) 9.6) t))) )
+(+ 5 (* 1.3 (sin (+ (* 8/3 pi) (* (/ (* 4 pi) 9.6) t)))))
+0
+)))))))
+(make-path-state 0 #f (circular-list
+    (make-juggler-path-segment   9.6
+       (lambda _ (lambda (t)
+          (cadr (translate-hands
+    (rotate-hands 
+       pair-of-hands
+     pi)
+(* 2.5 (sin (+ (* 4/3 pi) (* (/ (* 2 pi) 9.6) t))) )
+(+ 5 (* 1.3 (sin (+ (* 8/3 pi) (* (/ (* 4 pi) 9.6) t)))))
+ 0
+)))))))
+
+
+; Feedee 2
+
+(make-path-state 0 #f (circular-list
+    (make-juggler-path-segment   9.6
+       (lambda _ (lambda (t)
+          (car (translate-hands
+    (rotate-hands 
+       pair-of-hands
+     pi)
+(* 2.5 (sin (+ (* 2/3 pi) (* (/ (* 2 pi) 9.6) t)))) 
+(+ 5 (* 1.3 (sin (+ (* 4/3 pi) (* (/ (* 4 pi) 9.6) t)))))
+0
+)))))))
+(make-path-state 0 #f (circular-list
+    (make-juggler-path-segment   9.6
+       (lambda _ (lambda (t)
+          (cadr (translate-hands
+    (rotate-hands 
+       pair-of-hands
+     pi)
+(* 2.5 (sin (+ (* 2/3 pi) (* (/ (* 2 pi) 9.6) t))) )
+(+ 5 (* 1.3 (sin (+ (* 4/3 pi) (* (/ (* 4 pi) 9.6) t)))))
+ 0
+)))))))
+
+)
+
+
+
+)
+
+  )" 0.4 0.45 2)
+     )
      
      '(("-- Dropbacks --"))
      

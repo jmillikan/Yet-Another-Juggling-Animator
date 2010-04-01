@@ -77,7 +77,7 @@
         (cadr (assoc name options))
         'default))
   
-  ; In degrees >_<
+  ; In degrees >_< And probably wrong, judging by some glitches in feed weave.
   (define (angle-diff a1 a2)
     (min (abs (- a1 a2))
          (abs (- (+ 360 (min a1 a2)) (max a1 a2)))))

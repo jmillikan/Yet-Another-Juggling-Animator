@@ -82,8 +82,7 @@
       (instantiate-view-controls canvas control-panel this)
       
       (define/public (set-error e)
-        (error e)
-        #;(set-status-text e))
+        (set-status-text e))
       
       (define/public (clear-error)
         (set-status-text ""))
@@ -156,7 +155,7 @@
                                 (send main-window show-pattern pattern hands)))))
         (stretchable-width #f))
       
-      (define juggler-ec (new editor-canvas% [parent this] [line-count 4]))
+      (define juggler-ec (new editor-canvas% [parent this] [line-count 12]))
       (define juggler-t (new text%))
       (send juggler-ec set-editor juggler-t)
       
