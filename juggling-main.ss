@@ -138,10 +138,10 @@
         (send input-beat set-value (number->string b))
         (send input-dwell set-value (number->string d))
         (send hold-beats set-value (number->string h))
-        (send juggler-t erase)
-        (send juggler-t insert j 0)
+        (send juggler-t erase) ; Why do these add extra newlines
+        (send juggler-t insert j)
         (send pattern-t erase)
-        (send pattern-t insert p 0))
+        (send pattern-t insert p))
       
       (instantiate button% 
         ("Run" values-row (λ _ 
