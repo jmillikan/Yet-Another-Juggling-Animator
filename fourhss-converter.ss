@@ -3,65 +3,22 @@
   
   (provide 6hss->sexp 4hss->sexp 2hss->sexp sync-ss->sexp passing-ss->sexp)
   
+  ; Changes 0-9a-z siteswap strings into a list of throw lengths
   (define (string->throw-list s)
     (map throw-length (string->list (regexp-replace* #px"\\s" s ""))))
   
-  ;;; I've got to really try not to worry about this.
-  (define (expanded-throw-list hands throw-list)
-    (concatenate (make-list hands throw-list)))
+  (define (2hss->sexp s) (ss->sexp s 2))
   
-  (define (2hss->sexp s)
-    (let* ((throw-list (string->throw-list s))            
-           (full-throw-list (expanded-throw-list 2 throw-list)))   
-       (for/list 
-         ([beat (in-naturals 0)]
-          [throw full-throw-list])
-          (let ((hand (remainder beat 2)))
-            (if (zero? hand) 
-                (list 
-                 (if (zero? throw) '-
-                     (list throw (if (even? throw) 0 1))) '-)
-                (list '- 
-                      (if (zero? throw) '- (list throw (if (even? throw) 1 0)))))))))
+  (define (4hss->sexp s) (ss->sexp s 4))
   
-  (define (4hss->sexp s)
-    (let* ((throw-list (string->throw-list s))            
-           (full-throw-list (expanded-throw-list 4 throw-list)))
-       (for/list 
-         ([beat (in-naturals 0)]
-          [throw full-throw-list])
-         
-          (let* 
-              ((throw-hand (remainder beat 4))
-               (dest-hand (remainder (+ throw-hand throw) 4))
-               (sexp-throw (if (zero? throw) '- (list throw 
-                                                      (cond 
-                                                        ((= dest-hand 1) 2)
-                                                        ((= dest-hand 2) 1)
-                                                        (#t
-                                                         dest-hand))))))
-            (list
-             (if (= throw-hand 0) sexp-throw '-)
-             (if (= throw-hand 2) sexp-throw '-)
-             (if (= throw-hand 1) sexp-throw '-)
-             (if (= throw-hand 3) sexp-throw '-))))))
-  
-   #;(6hss->sexp "a")
-#;'(((10 3) - - - - -)
-  (- - (10 5) - - -)
-  (- - - - (10 0) -)
-  (- (10 2) - - - -)
-  (- - - (10 4) - -)
-  (- - - - - (10 1)))
-  
-  (define (6hss->sexp s)
-    (ss->sexp s 6))
-  ; Ugh, it really is about time to generalize this.
+  (define (6hss->sexp s) (ss->sexp s 6))
+
+  ;; Viewing string s as a hand-count hand siteswap with hands in rr...ll... order, convert
+  ;; to sexp with hands in rlrl... order.
   (define (ss->sexp s hand-count)
-    (let* (
-           (first-left (ceiling (/ hand-count 2)))
-           (throw-list (string->throw-list s))            
-           (full-throw-list (expanded-throw-list hand-count throw-list)))
+    (let* ((first-left (ceiling (/ hand-count 2)))
+           ;; for n hands, repeat pattern as a list n times
+           (full-throw-list (apply append (make-list hand-count (string->throw-list s)))))
        (for/list 
          ([beat (in-naturals 0)]
           [throw full-throw-list])
@@ -71,8 +28,9 @@
                ; e.g. 3 for 6-hand, 2 for 4-hand, 4 for 7-hand?
                (sexp-throw (if (zero? throw) 
                                '- 
-                               ; "fix" the fact that 6hand ss goes rrrlll
+                               ; "fix" the fact that n-hand ss goes rrr...lll...
                                ; where sexps go rlrlrl
+                               ; Odd hands will be an extra right. Thus the mess with first-left.
                                (list throw
                                      (if (< dest-hand first-left)
                                          #;(right) (* dest-hand 2)
@@ -86,24 +44,22 @@
                          #;(left) (+ first-left (floor (/ hand 2)))))
                   sexp-throw '-))))))
   
-  ; No pass fixes for now...
-  ; This gets REALLY messy in convert-sync-throw, and will be worse for passing... 
-  ; Maybe a lexer/parser would be better?
-  (define (sync-ss->sexp s)
-    (let* ((s-no-commas (regexp-replace* #px"," s " "))
-           (star? (regexp-match? #px"\\*\\s*$" s-no-commas))
-           ; strips star and encloses so we can read it in as a sexp
-           (s-enclosed (regexp-replace #px"^(.*\\))\\*?\\s*$" s-no-commas "(\\1)"))
-           (sexp-no-commas (call-with-input-string s-enclosed read))
-           )
-      (append (if star? '(*) '())
-              ; The apply append and '() business inserts the empty beats.
-              (apply append (map
-                             (λ (beat)
-                               (list 
-                                (map convert-sync-throw beat (iota (length beat)))
-                                '()))
-                             sexp-no-commas)))))
+    (define (sync-ss->sexp s)
+      (let* ((star? (regexp-match? #px"\\*\\s*$" s))
+             ; I can't figure out how to get a list of all capture matches
+             (beat-strings (map
+                            (λ (b) (cadr (regexp-match #rx"\\(([^)]*)\\)" b)))
+                            (regexp-match* #rx"\\([^)]*\\)"  s))))
+        (append (if star? '(*) '())
+                ; The concatenate/zip/circular list '() business inserts empty beats.
+                (concatenate
+                 (zip (map 
+                     (λ (bs) 
+                       (let [(throw-strings (regexp-split #px"," bs))]
+                         (map convert-sync-throw throw-strings
+                              (iota (length throw-strings)))))
+                     beat-strings)
+                      (circular-list '()))))))
   
   
   ; Translate a sync throw
@@ -111,16 +67,14 @@
   ; to a sexp throw (list <height> <hand>)
   (define (convert-sync-throw throw hand)
     ; crossing is whether "x" was indicated, not whether 
-    (let-values (((height crossing? pass?)
-                  (if (number? throw) (values throw #f #f)
-                      (values
-                       (string->number (regexp-replace #px"^([0-9]+)[px]*$" (symbol->string throw) "\\1"))
-                       (regexp-match? #px"x" (symbol->string throw))
-                       (regexp-match? #px"p" (symbol->string throw))))))
-      (if (zero? height)
-          '-
+    (let*
+        ([height (string->number (car (regexp-match #px"[0-9]+" throw)))]
+         [crossing? (regexp-match? #px"x" throw)]
+         [pass? (regexp-match? #px"p" throw)])
+      (if (zero? height) '-
           (list height 
                 ; Determine receiver (0 or 2)
+                ; This is correct but muddled.
                 (let ((reciever-same-hand 
                        (if pass? (remainder (+ hand 2) 4) hand)))
                   (if (or 
@@ -131,6 +85,8 @@
                           (sub1 reciever-same-hand))
                       reciever-same-hand))))))
   
+  ; This whole thing is garbage. For my troubles, though, it interprets a big enough
+  ; subset of passing ss to handle some easy sync patterns.
   (define (passing-ss-throw-parts s)    
     (let* ((matches (regexp-match #px"^([0-9\\.]+)((?:p[0-9]?)?)(x?)" s))
            (height (string->number (list-ref matches 1)))
@@ -156,19 +112,15 @@
            (regexp-split #px"\\s*\\|\\s*" 
                          (cadr (regexp-match #px"^\\s*<\\s*(.*)\\s*>\\s*$" passing-ss)))))
     
-    
+    ; HOW HIGH do you have to BE to even WRITE a function like that
     (define (unscrew-throws juggler-throws stagger-non1st-jugglers?)
-      (map 
-       (λ (beat)
-         (apply append beat))
+      (map concatenate
        (apply map 
               (cons list 
                     (if stagger-non1st-jugglers?
-                        (append
-                         (list (car juggler-throws))
-                         (map (λ (j)
-                                (append (drop j 1)
-                                        (take j 1)))
+                        (cons
+                         (car juggler-throws)
+                         (map reverse ; two-element list...
                               (cdr juggler-throws)))
                         
                         juggler-throws)
@@ -194,14 +146,11 @@
                              (remainder
                               (+ (if (odd? time) 0 1)
                                  (if (odd? height) 0 1)
-                                 (if (and pass? staggered-hands?) 1 0)
-                                 )
-                              
+                                 (if (and pass? staggered-hands?) 1 0))
                               2)))))
               (if (odd? time) 
                   (list '- throw)
-                  (list throw '-))
-              )))))
+                  (list throw '-)))))))
     
     (let* ((juggler-parts (parse-passing-ss passing-ss))           
            ; First try: Both jugglers start right handed, sync. Everything is straightforward

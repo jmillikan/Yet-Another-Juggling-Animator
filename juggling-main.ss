@@ -1,8 +1,5 @@
-(module juggling-main scheme
-  (require mred
-           mzlib/class
-           mzlib/math
-           sgl
+(module juggling-main racket/gui
+  (require sgl
            sgl/gl-vectors
            srfi/1
            mzlib/pconvert
@@ -34,38 +31,42 @@
       
       (define prefab-buttons (instantiate horizontal-panel% (prefab-column) (stretchable-height #f)))
       
-      (define examine-button (instantiate button% ("Edit" prefab-buttons 
-                                                          (λ (_ e)
-                                                            (with-handlers ((exn:fail? (λ (e) (set-error (exn-message e)))))
-                                                              (let* 
-                                                                  ((sels (send prefab-list get-selections))) ; Should have 0 or 1 selections.
-                                                                (if (= (length sels) 0)
-                                                                    (error "No pattern selected")
-                                                                    (match-let*
-                                                                        (((list pattern-name pattern-t jugglers-t beat dwell hold) 
-                                                                          (list-ref complete-patterns-internal (car sels))))
-                                                                      (send ed-win edit-pattern
-                                                                            pattern-t jugglers-t beat dwell hold)
-                                                                      
-                                                                      (set! show-editor #t)
-                                                                      (send ed-win show #t)
-                                                                      (send mi-editor check #t)))))))))
+      (define examine-button 
+        (instantiate button% 
+          ("Edit" prefab-buttons 
+                  (λ (_ e)
+                    (with-handlers ((exn:fail? (λ (e) (set-error (exn-message e)))))
+                      (let* 
+                          ((sels (send prefab-list get-selections))) ; Should have 0 or 1 selections.
+                        (if (= (length sels) 0)
+                            (error "No pattern selected")
+                            (match-let*
+                                (((list pattern-name pattern-t jugglers-t beat dwell hold) 
+                                  (list-ref complete-patterns-internal (car sels))))
+                              (send ed-win edit-pattern
+                                    pattern-t jugglers-t beat dwell hold)
+                              
+                              (set! show-editor #t)
+                              (send ed-win show #t)
+                              (send mi-editor check #t)))))))))
       
-      (define run-button (instantiate button% 
-                           ("Run" prefab-buttons 
-                                  (λ (_ e)
-                                    (with-handlers ((exn:fail? (λ (e) (set-error (exn-message e)))))
-                                      (let* 
-                                          ((sels (send prefab-list get-selections))) ; Should have 0 or 1 selections.
-                                        (if (= (length sels) 0)
-                                            (error "No pattern selected")
-                                            (match-let*
-                                                (((list pattern-name pattern-t jugglers-t beat dwell hold) 
-                                                  (list-ref complete-patterns-internal (car sels)))
-                                                 (hands (eval-string jugglers-t)))
-                                              (show-pattern 
-                                               (sexp->pattern (eval-string pattern-t) beat dwell hands hold)
-                                               hands)))))))))
+      (define run-button 
+        (instantiate button% 
+          ("Run" prefab-buttons 
+                 (λ (_ e)
+                   (with-handlers ((exn:fail? (λ (e)
+                                                (set-error (exn-message e)))))
+                     (let* 
+                         ((sels (send prefab-list get-selections))) ; Should have 0 or 1 selections.
+                       (if (= (length sels) 0)
+                           (error "No pattern selected")
+                           (match-let*
+                               (((list pattern-name pattern-t jugglers-t beat dwell hold) 
+                                 (list-ref complete-patterns-internal (car sels)))
+                                (hands (eval-string jugglers-t)))
+                             (show-pattern 
+                              (sexp->pattern (eval-string pattern-t) beat dwell hands hold)
+                              hands)))))))))
       
       (define canvas (instantiate juggling-canvas% (v-split) (min-width 600) (min-height 450)))
       
@@ -103,19 +104,7 @@
                              (set! show-editor (not show-editor))
                              (send ed-win show show-editor)
                              (send mi-editor check show-editor)))
-                          (checked show-editor)))
-      
-      (define show-butt-collisions #f)
-      (send canvas set-butt-collisions #f)
-      
-      (define mi-butt-collisions (instantiate checkable-menu-item%
-                                   ("Butt proximity warnings"
-                                    m-view
-                                    (λ _
-                                      (set! show-butt-collisions (not show-butt-collisions))
-                                      (send canvas set-butt-collisions show-butt-collisions)
-                                      (send mi-butt-collisions check show-butt-collisions)))
-                                   (checked show-butt-collisions)))))
+                          (checked show-editor)))))
   
   (define editor-window%
     (class* frame% ()
@@ -203,7 +192,7 @@
                (new-form 
                 (cond ((= i 0) siteswap-form)
                       ((= i 1) scheme-form)
-                      (#t 'flagrant-error))))
+                      (#t (error "No tabbed area for that tab, I guess?")))))
           
           (delete-child current-form)
           (add-child new-form)
@@ -263,8 +252,6 @@
       (super-instantiate (parent) (alignment '(center center)) (stretchable-height #f))
       (instantiate pattern-line% ("Siteswap" "0.25" "0.16" "744" 2hss->sexp (λ _ 2) 
                                              (λ _ pair-of-hands) window 2-ss-examples this))
-      (instantiate pattern-line% ("4-hand SS" "0.15" "0.2" "966" 4hss->sexp (λ _ 4) 
-                                              (λ _ pair-of-jugglers) window 4-hand-examples this))
       (instantiate pattern-line% ("Synchronous" "0.25" "0.20" "(6x,4)*" sync-ss->sexp (λ _ 2) 
                                                 (λ _ (juggler-circle 2 3.0)) window syncss-examples this))))
   
@@ -291,10 +278,13 @@
                                                                   get-hands window sexp-examples this)))
       (set! hold-length  (instantiate text-field% ("H" sexp-line) (init-value "2")))
       
+      (instantiate pattern-line% ("4-hand SS" "0.15" "0.2" "966" 4hss->sexp (λ _ 4) 
+                                              (λ _ pair-of-jugglers) window 4-hand-examples this))
+      
       (instantiate pattern-line% ("6-hand SS" "0.10" "0.2" "a" 6hss->sexp (λ _ 6) get-hands window 6-ss-examples this))
       
       
-      (instantiate pattern-line% ("Passing SS" "0.28" "0.20" "<3p 3 3|3p 3 3>" passing-ss->sexp (λ _ 2) 
+      #;(instantiate pattern-line% ("Passing SS" "0.28" "0.20" "<3p 3 3|3p 3 3>" passing-ss->sexp (λ _ 2) 
                                                get-hands window passing-ss-examples this))))
   
   (define (instantiate-view-controls c h window)
@@ -305,7 +295,7 @@
           (stretchable-width #t))
         (instantiate button% ("-" h (λ _ (send c zoom-out)))
           (stretchable-width #t)))
-      (instantiate combo-field% ("Object" (list "ball" "ring" "club") v) 
+      (instantiate combo-field% ("Object" (list "ball" "ring" "club") v)
         (callback 
          (λ (l v) 
            (with-handlers ((exn:fail? (λ (e) (send window set-error (exn-message e)))))
@@ -319,4 +309,4 @@
           (stretchable-width #f)))))
   
   (define w (make-object main-window))
-    (send w show #t))
+  (send w show #t))

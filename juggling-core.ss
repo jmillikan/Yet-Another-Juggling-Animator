@@ -1,4 +1,4 @@
-(module juggling-core scheme
+(module juggling-core racket
   
   (require srfi/1)
   
