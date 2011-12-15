@@ -7,7 +7,7 @@
            "juggling-core.ss"
            "sexp-converter.ss"
            "pattern-utilities.ss"
-           "fourhss-converter.ss"
+           "ss-converter.ss"
            "example-patterns.ss"
            "juggling-canvas.ss")
   
