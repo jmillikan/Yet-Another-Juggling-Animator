@@ -206,7 +206,7 @@
                                         (* -1 t 
                                            (/ (+ initial-rotation extra-rotation (* spins 360)) tf)))))))))))))
   
-  (define (radians->degrees a) (* 57.2957795 a))
+#;(define (radians->degrees a) (* 57.2957795 a))
   ; Ugh, don't ask. My geometry is bad.
   (define (get-angle x y)
     (- 180 ; It's not just about living forever, Jackie. The trick is living with yourself forever.

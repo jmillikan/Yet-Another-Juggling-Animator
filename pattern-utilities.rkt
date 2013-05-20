@@ -1,5 +1,5 @@
 (module pattern-utilities scheme
-  (require "juggling-core.ss" srfi/1)
+  (require "juggling-core.rkt" srfi/1)
   
   (provide (all-defined-out))
   

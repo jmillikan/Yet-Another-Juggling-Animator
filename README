@@ -1,1 +1,5 @@
-This is Yet Another Juggling Animator, better name forthcoming. It is being developed under DrScheme version 4.2.2. The file to run for the animator itself is "juggling-main.ss". It is presently licensed under the GPL, version 3.0 (See "COPYING" or <http://www.gnu.org/licenses/>).
+This is Yet Another Juggling Animator, a largely abandoned club passing pattern animator. It runs, with a lot of bugs, under recent versions of Racket. It was originally built as an experiment in multi-hand siteswap, became an experiment in building patterns as scheme values, and can still serve as a didactic tool via the built-in pattern list.
+
+Run juggling-main.rkt with 'racket' or DrRacket. The most functional parts of the interface are pattern selection on the right hand side, and the 4/6 hand siteswap entry areas on the bottom.
+
+Licensed under the GPL, version 3.0 (See "COPYING" or <http://www.gnu.org/licenses/>).

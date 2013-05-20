@@ -4,12 +4,12 @@
            srfi/1
            mzlib/pconvert
            
-           "juggling-core.ss"
-           "sexp-converter.ss"
-           "pattern-utilities.ss"
-           "ss-converter.ss"
-           "example-patterns.ss"
-           "juggling-canvas.ss")
+           "juggling-core.rkt"
+           "sexp-converter.rkt"
+           "pattern-utilities.rkt"
+           "ss-converter.rkt"
+           "example-patterns.rkt"
+           "juggling-canvas.rkt")
   
   (define main-window
     (class* frame% ()

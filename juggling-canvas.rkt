@@ -4,7 +4,7 @@
            sgl
            sgl/gl-vectors
            srfi/1
-           "juggling-core.ss")
+           "juggling-core.rkt")
   
   (provide juggling-canvas%)
   

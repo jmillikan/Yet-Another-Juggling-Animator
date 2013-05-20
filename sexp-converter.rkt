@@ -1,6 +1,6 @@
 (module sexp-converter scheme
   (require srfi/1)
-  (require "juggling-core.ss")
+  (require "juggling-core.rkt")
   
   (provide 
    sexp->pattern
