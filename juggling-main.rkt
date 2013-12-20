@@ -1,7 +1,6 @@
 (module juggling-main racket/gui
   (require sgl
            sgl/gl-vectors
-           srfi/1
            mzlib/pconvert
            
            "juggling-core.rkt"
@@ -43,11 +42,11 @@
                             (match-let*
                                 (((list pattern-name pattern-t jugglers-t beat dwell hold) 
                                   (list-ref complete-patterns-internal (car sels))))
+                              (set! show-editor #t)
+                              (send ed-win show #t)
                               (send ed-win edit-pattern
                                     pattern-t jugglers-t beat dwell hold)
                               
-                              (set! show-editor #t)
-                              (send ed-win show #t)
                               (send mi-editor check #t)))))))))
       
       (define run-button 
@@ -127,7 +126,7 @@
         (send input-beat set-value (number->string b))
         (send input-dwell set-value (number->string d))
         (send hold-beats set-value (number->string h))
-        (send juggler-t erase) ; Why do these add extra newlines
+        (send juggler-t erase)
         (send juggler-t insert j)
         (send pattern-t erase)
         (send pattern-t insert p))
